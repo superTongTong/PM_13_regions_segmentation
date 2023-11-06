@@ -9,7 +9,7 @@ import nibabel as nib
 import pandas as pd
 from tqdm import tqdm
 
-from ..totalsegmentator.map_to_binary import class_map_5_parts
+from map_to_binary import class_map_PM
 
 
 def generate_json_from_dir_v2(foldername, subjects_train, subjects_val, labels):
@@ -17,11 +17,6 @@ def generate_json_from_dir_v2(foldername, subjects_train, subjects_val, labels):
     out_base = Path(os.environ['nnUNet_raw']) / foldername
 
     json_dict = {}
-    json_dict['name'] = "TotalSegmentator"
-    json_dict['description'] = "Segmentation of TotalSegmentator classes"
-    json_dict['reference'] = "https://zenodo.org/record/6802614"
-    json_dict['licence'] = "Apache 2.0"
-    json_dict['release'] = "2.0"
     json_dict['channel_names'] = {"0": "CT"}
     json_dict['labels'] = {val:idx for idx,val in enumerate(["background",] + list(labels))}
     json_dict['numTraining'] = len(subjects_train + subjects_val)
@@ -73,15 +68,14 @@ if __name__ == "__main__":
 
     dataset_path = Path(sys.argv[1])  # directory containining all the subjects
     nnunet_path = Path(sys.argv[2])  # directory of the new nnunet dataset
-    # TotalSegmentator is made up of 5 models. Choose which one you want to produce. Choose from: 
-    #   class_map_part_organs
-    #   class_map_part_vertebrae 
-    #   class_map_part_cardiac 
-    #   class_map_part_muscles 
-    #   class_map_part_ribs
+    # map_to_binary contains 3 list for 3 different dataset. Choose which one you want to produce. Choose from:
+    #   class_map_24_organs : 24 classes
+    #   class_map_13_regions : 13 classes
+    #   class_map_abdomenCT :  4 classes
+
     class_map_name = sys.argv[3]  
 
-    class_map = class_map_5_parts[class_map_name]
+    class_map = class_map_PM[class_map_name]
 
     (nnunet_path / "imagesTr").mkdir(parents=True, exist_ok=True)
     (nnunet_path / "labelsTr").mkdir(parents=True, exist_ok=True)
