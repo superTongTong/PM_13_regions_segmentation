@@ -71,4 +71,3 @@ def brats_validation_transform(image_keys, all_keys, spatial_size=(240, 240)):
         ToTensord(keys=all_keys),
     ])
     return val_transform
-
