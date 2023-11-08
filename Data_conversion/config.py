@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 
+
 def get_nnunet_dir():
     # Get the current working directory where the Python script is located
     script_directory = os.path.dirname(os.path.abspath(__file__))
@@ -40,9 +41,7 @@ def setup_nnunet():
 
 def mian():
     setup_nnunet()
-    print("nnUNet is set up")
-    # out_base = Path(os.environ['nnUNet_raw'])
-    # print(out_base)
+    print("nnUNet environment variable is set up")
 
 
 if __name__ == "__main__":

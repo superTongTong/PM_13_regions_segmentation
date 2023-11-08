@@ -6,6 +6,7 @@ from tqdm import tqdm
 from map_to_binary import class_map_PM
 from dataset001_small_totalseg import generate_json_from_dir_v2
 import re
+# from nnunetv2.inference.predict_from_raw_data import nnUNetPredictor
 
 if __name__ == "__main__":
     """
