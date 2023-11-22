@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 
 
-
 def get_nnunet_dir():
     # Get the current working directory where the Python script is located
     script_directory = os.path.dirname(os.path.abspath(__file__))
@@ -18,7 +17,7 @@ def get_nnunet_dir():
 
     if root_directory:
         config_dir = os.path.join(root_directory, target_folder_name)
-        print(f"The '{target_folder_name}' folder is located at: {os.path.join(root_directory, target_folder_name)}")
+        # print(f"The '{target_folder_name}' folder is located at: {os.path.join(root_directory, target_folder_name)}")
     else:
         print(f"The '{target_folder_name}' folder was not found in the directory tree of the script.")
 
@@ -31,9 +30,9 @@ def setup_nnunet():
     raw_dir = config_dir / "nnunet/raw"
     preprocessed_dir = config_dir / "nnunet/preprocessed"
     results_dir = config_dir / "nnunet/results"
-    # print(f"nnUNet weights are located at: {weights_dir}")
-    # This variables will only be active during the python script execution. Therefore
-    # we do not have to unset them in the end.
+
+    # This variables will only be active during the python script execution.
+    # Therefore, we do not have to unset them in the end.
     os.environ["nnUNet_raw"] = str(raw_dir)  # not needed, just needs to be an existing directory
     os.environ["nnUNet_preprocessed"] = str(preprocessed_dir)  # not needed, just needs to be an existing directory
     os.environ["nnUNet_results"] = str(results_dir)
@@ -41,7 +40,8 @@ def setup_nnunet():
 
 def mian():
     setup_nnunet()
-    print("nnUNet environment variable is set up")
+    print("nnUNet environment variable is set up.")
+    # print(os.environ["nnUNet_raw"])
 
 
 if __name__ == "__main__":
