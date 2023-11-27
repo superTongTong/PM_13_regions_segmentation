@@ -6,20 +6,17 @@ from tqdm import tqdm
 from map_to_binary import class_map_PM
 from dataset001_small_totalseg import generate_json_from_dir_v2
 import re
-# from nnunetv2.inference.predict_from_raw_data import nnUNetPredictor
+
 
 if __name__ == "__main__":
     """
     Convert the dataset to nnUNet format and generate dataset.json and splits_final.json
 
     example usage: 
-    python dataset001_small_totalseg.py C:/Users/20202119/PycharmProjects/segmentation_PM/data/abdomenCT_60_test_cases C:/Users/20202119/PycharmProjects/segmentation_PM/data/nnunet/raw/Dataset002_abdomenCT_60 class_map_abdomenCT
+    python dataset002_abdomenCT_60_cases.py D:/master/graduation_project/data_set/abdomenCT_198_test_cases C:/Users/20202119/PycharmProjects/segmentation_PM/data/nnunet/raw/Dataset003_abdomenCT_198 class_map_abdomenCT
 
-    You must set nnUNet_raw and nnUNet_preprocessed environment variables before running this (see nnUNet documentation).
-    To set environment variables in Windows, use the following command in Command Prompt
-    set nnUNet_raw=C:/Users/20202119/PycharmProjects/segmentation_PM/data/nnunet/raw
-    set nnUNet_preprocessed=C:/Users/20202119/PycharmProjects/segmentation_PM/data/nnunet/preprocessed
-    set nnUNet_results=C:/Users/20202119/PycharmProjects/segmentation_PM/data/nnunet/results
+    You must set nnUNet_raw and nnUNet_preprocessed environment variables before running this (see nnUNet documentation)
+
     """
 
     dataset_path = Path(sys.argv[1])  # directory containining all the subjects
@@ -52,16 +49,23 @@ if __name__ == "__main__":
         label = re.sub(r'_(\d+)_\d+\.', r'_\1.', subject)
         label_path = dataset_path / "masks" / label
         shutil.copy(label_path, nnunet_path / "labelsTr" / f"{label}")
-        # combine_labels(subject_path / "ct.nii.gz",
-        #                nnunet_path / "labelsTr" / f"{subject}.nii.gz",
-        #                [subject_path / "segmentations" / f"{roi}.nii.gz" for roi in class_map.values()])
+    #     # combine_labels(subject_path / "ct.nii.gz",
+    #     #                nnunet_path / "labelsTr" / f"{subject}.nii.gz",
+    #     #                [subject_path / "segmentations" / f"{roi}.nii.gz" for roi in class_map.values()])
 
-    # print("Copying test data...")
-    # for subject in tqdm(subjects_test):
-    #     subject_path = dataset_path / subject
-    #     shutil.copy(subject_path / "ct.nii.gz", nnunet_path / "imagesTs" / f"{subject}_0000.nii.gz")
+    print("Copying test data...")
+    for subject in tqdm(subjects_test):
+        subject_path = dataset_path / "images" / subject
+        shutil.copy(subject_path, nnunet_path / "imagesTs" / f"{subject}")
+        label = re.sub(r'_(\d+)_\d+\.', r'_\1.', subject)
+        label_path = dataset_path / "masks" / label
+        shutil.copy(label_path, nnunet_path / "labelsTs" / f"{label}")
         # combine_labels(subject_path / "ct.nii.gz",
         #                nnunet_path / "labelsTs" / f"{subject}.nii.gz",
         #                [subject_path / "segmentations" / f"{roi}.nii.gz" for roi in class_map.values()])
 
-    generate_json_from_dir_v2(nnunet_path.name, subjects_train, subjects_val, class_map.values())
+    # Extract the common part of the filenames for comparison
+    common_part_ct_scan = "_0000.nii.gz"
+    subjects_train_new = [subject.replace(common_part_ct_scan, "") for subject in subjects_train]
+    subjects_val_new = [subject.replace(common_part_ct_scan, "") for subject in subjects_val]
+    generate_json_from_dir_v2(nnunet_path.name, subjects_train_new, subjects_val_new, class_map.values())
