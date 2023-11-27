@@ -1,8 +1,7 @@
 from Data_conversion.config import setup_nnunet
 import subprocess
 from pathlib import Path
-import torch
-# from nnunetv2.training.nnUNetTrainer.nnUNetTrainer import nnUNetTrainer
+
 
 
 def train():
