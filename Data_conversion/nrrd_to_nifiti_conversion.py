@@ -1,7 +1,5 @@
-
 import nrrd
 import numpy as np
-import argparse
 import os
 import nibabel as nib
 
@@ -41,15 +39,12 @@ def _space2ras(space):
     return np.diag(xfrm)
 
 
-def nifti_write(inImg, prefix=None):
+def nifti_write(data, hdr, prefix=None):
     if prefix:
         prefix = os.path.abspath(prefix)
-    else:
-        prefix = os.path.abspath(inImg).split('.')[0]
 
-    img = nrrd.read(inImg)
-    hdr = img[1]
-    data = img[0]
+    # data = img[0]
+    # hdr = img[1]
 
     SPACE_UNITS = 2
     TIME_UNITS = 0
@@ -60,7 +55,7 @@ def nifti_write(inImg, prefix=None):
 
     if hdr['dimension'] == 4:
         axis_elements = hdr['kinds']
-        for i in range(4):
+        for i in range(3):
             if axis_elements[i] == 'list' or axis_elements[i] == 'vector':
                 grad_axis = i
                 break
@@ -133,17 +128,3 @@ def nifti_write(inImg, prefix=None):
     hdr_nifti['descrip'] = 'NRRD-->NIFTI transform'
     nib.save(img_nifti, prefix + '.nii.gz')
 
-
-def main():
-    parser = argparse.ArgumentParser(description='NRRD to NIFTI conversion tool')
-    parser.add_argument('-i', '--input', type=str, required=True, help='input nrrd/nhdr file')
-    parser.add_argument('-p', '--prefix', type=str,
-                        help='output prefix for .nii.gz, .bval, and .bvec files (default: input prefix)')
-
-    args = parser.parse_args()
-
-    nifti_write(args.input, args.prefix)
-
-
-if __name__ == '__main__':
-    main()
