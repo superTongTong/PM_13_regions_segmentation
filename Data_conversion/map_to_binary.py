@@ -51,8 +51,14 @@ class_map_PM = {
         11: "region_11",
         12: "region_12",
         13: "region_0"
-    }
+    },
 
+    # classes for 3 regions
+    "class_map_3_regions": {
+        2: "region_1",
+        3: "region_2",
+        4: "region_3",
+    }
 }
 
 

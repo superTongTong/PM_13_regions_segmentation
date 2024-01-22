@@ -7,7 +7,7 @@ targeted_folder = "D:/master/graduation_project/data_set/abdomenCT_198_test_case
 
 # Initialize a list to store file names and splits
 data = []
-train_ratio, val_ratio, test_ratio = 0.6, 0.2, 0.2 # for 198 cases, 117 train, 42 val, 39 test
+train_ratio, val_ratio, test_ratio = 0.8, 0.2, 0.0
 # Iterate through the files in the directory
 for root, dirs, files in os.walk(targeted_folder):
     for file in files:

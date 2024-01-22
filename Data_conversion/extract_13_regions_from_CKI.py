@@ -3,7 +3,7 @@ import nrrd
 from Data_conversion.nrrd_to_nifiti_conversion import nifti_write
 import time
 import nibabel as nib
-from nn_algorithm import crop_image, divide_background, restore_cropped_image
+from nn_algorithm_under_develop import crop_image, divide_background, restore_cropped_image
 
 
 def extract_3_regions():
@@ -81,7 +81,7 @@ def nearest_neighbour():
 if __name__ == "__main__":
     start_time = time.time()
 
-    # extract_3_regions()
-    nearest_neighbour()
+    extract_3_regions()
+    # nearest_neighbour()
     total_time = time.time() - start_time
     print(f"--- {total_time:.2f} seconds ---")

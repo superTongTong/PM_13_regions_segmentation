@@ -13,7 +13,7 @@ if __name__ == "__main__":
     Convert the dataset to nnUNet format and generate dataset.json and splits_final.json
 
     example usage: 
-    python dataset002_abdomenCT_60_cases.py D:/master/graduation_project/data_set/abdomenCT_198_test_cases C:/Users/20202119/PycharmProjects/segmentation_PM/data/nnunet/raw/Dataset003_abdomenCT_198 class_map_abdomenCT
+    python dataset007_CKI_segmentation.py D:/master/graduation_project/some/where C:/Users/20202119/PycharmProjects/segmentation_PM/data/nnunet/raw/Dataset007_CKI_DATA class_map_3_regions
 
     You must set nnUNet_raw and nnUNet_preprocessed environment variables before running this (see nnUNet documentation)
 
@@ -42,7 +42,6 @@ if __name__ == "__main__":
     meta = pd.read_csv(dataset_path / "meta.csv", sep=",")
     subjects_train = meta[meta["split"] == "train"]["image_id"].to_list()
     subjects_val = meta[meta["split"] == "val"]["image_id"].to_list()
-    # subjects_test = meta[meta["split"] == "test"]["image_id"].to_list()
 
     print("Copying train data...")
     for subject in tqdm(subjects_train + subjects_val):
@@ -52,20 +51,7 @@ if __name__ == "__main__":
         label = re.sub(r'_(\d+)_\d+\.', r'_\1.', subject)
         label_path = dataset_path / "masks" / label
         shutil.copy(label_path, nnunet_path / "labelsTr" / f"{label}")
-    #     # combine_labels(subject_path / "ct.nii.gz",
-    #     #                nnunet_path / "labelsTr" / f"{subject}.nii.gz",
-    #     #                [subject_path / "segmentations" / f"{roi}.nii.gz" for roi in class_map.values()])
 
-    # print("Copying test data...")
-    # for subject in tqdm(subjects_test):
-    #     subject_path = dataset_path / "images" / subject
-    #     shutil.copy(subject_path, nnunet_path / "imagesTs" / f"{subject}")
-    #     label = re.sub(r'_(\d+)_\d+\.', r'_\1.', subject)
-    #     label_path = dataset_path / "masks" / label
-    #     shutil.copy(label_path, nnunet_path / "labelsTs" / f"{label}")
-        # combine_labels(subject_path / "ct.nii.gz",
-        #                nnunet_path / "labelsTs" / f"{subject}.nii.gz",
-        #                [subject_path / "segmentations" / f"{roi}.nii.gz" for roi in class_map.values()])
 
     # Extract the common part of the filenames for comparison
     common_part_ct_scan = "_0000.nii.gz"
