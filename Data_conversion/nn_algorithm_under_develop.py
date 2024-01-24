@@ -4,6 +4,11 @@ import numpy as np
 from scipy.spatial import cKDTree
 
 
+'''
+加速算法思路： 
+先放大13个区域，再筛选出重叠的部分，最后NN分割重叠的区域
+'''
+
 def divide_background(input_data, distance_threshold):
 
     # Find the coordinates of the background voxels

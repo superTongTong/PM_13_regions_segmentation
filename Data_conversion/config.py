@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from nnunetv2.utilities.utils import get_filenames_of_train_images_and_targets
 
 
 def get_nnunet_dir():
@@ -42,7 +43,9 @@ def mian():
     setup_nnunet()
     print("nnUNet environment variable is set up.")
     # print(os.environ["nnUNet_raw"])
-
+    # print(os.environ["nnUNet_preprocessed"])
+    # print(os.environ["nnUNet_results"])
+    # print(get_filenames_of_train_images_and_targets(os.path.join(os.environ["nnUNet_raw"], 'Dataset007_CKI_DATA')))
 
 if __name__ == "__main__":
     mian()

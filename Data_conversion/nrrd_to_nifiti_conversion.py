@@ -40,8 +40,8 @@ def _space2ras(space):
 
 
 def nifti_write(data, hdr, prefix=None):
-    if prefix:
-        prefix = os.path.abspath(prefix)
+    # if prefix:
+    #     prefix = os.path.abspath(prefix)
 
     # data = img[0]
     # hdr = img[1]
@@ -126,5 +126,6 @@ def nifti_write(data, hdr, prefix=None):
     hdr_nifti['sform_code'] = 2
 
     hdr_nifti['descrip'] = 'NRRD-->NIFTI transform'
+
     nib.save(img_nifti, prefix + '.nii.gz')
 

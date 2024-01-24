@@ -13,7 +13,7 @@ if __name__ == "__main__":
     Convert the dataset to nnUNet format and generate dataset.json and splits_final.json
 
     example usage: 
-    python dataset007_CKI_segmentation.py D:/master/graduation_project/some/where C:/Users/20202119/PycharmProjects/segmentation_PM/data/nnunet/raw/Dataset007_CKI_DATA class_map_3_regions
+    python dataset007_CKI_segmentation.py C:/Users/20202119/PycharmProjects/segmentation_PM/data/three_regions_segmentation C:/Users/20202119/PycharmProjects/segmentation_PM/data/nnunet/raw/Dataset007_CKI_DATA class_map_3_regions
 
     You must set nnUNet_raw and nnUNet_preprocessed environment variables before running this (see nnUNet documentation)
 
@@ -45,16 +45,16 @@ if __name__ == "__main__":
 
     print("Copying train data...")
     for subject in tqdm(subjects_train + subjects_val):
-        subject_path = dataset_path / "images" / subject
+        subject_path = dataset_path / "First_60_cases" / subject
         shutil.copy(subject_path, nnunet_path / "imagesTr" / f"{subject}")
 
         label = re.sub(r'_(\d+)_\d+\.', r'_\1.', subject)
-        label_path = dataset_path / "masks" / label
+        label_path = dataset_path / "masks_1_3" / label
         shutil.copy(label_path, nnunet_path / "labelsTr" / f"{label}")
 
-
     # Extract the common part of the filenames for comparison
-    common_part_ct_scan = "_0000.nii.gz"
+    # common_part_ct_scan = "_0000.nii.gz"
+    common_part_ct_scan = ".nii.gz"
     subjects_train_new = [subject.replace(common_part_ct_scan, "") for subject in subjects_train]
     subjects_val_new = [subject.replace(common_part_ct_scan, "") for subject in subjects_val]
     generate_json_from_dir_v2(nnunet_path.name, subjects_train_new, subjects_val_new, class_map.values())
