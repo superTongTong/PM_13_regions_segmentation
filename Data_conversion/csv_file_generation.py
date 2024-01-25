@@ -3,7 +3,7 @@ import csv
 import random
 
 # Specify the directory where you want to search for files
-targeted_folder = "../data/three_regions_segmentation/First_60_cases"
+targeted_folder = "../data/three_regions_segmentation_orig/First_60_cases"
 
 # Initialize a list to store file names and splits
 data = []
@@ -20,10 +20,11 @@ for root, dirs, files in os.walk(targeted_folder):
                 split = "val"
             else:
                 split = "test"
+
             data.append({"image_id": file, "split": split})
 
 # Specify the output CSV file
-csv_file = "../data/three_regions_segmentation/meta.csv"
+csv_file = "../data/three_regions_segmentation_orig/meta.csv"
 
 # Write the data to the CSV file
 with open(csv_file, "w", newline="") as csv_file:

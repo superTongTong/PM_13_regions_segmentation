@@ -6,6 +6,7 @@ from tqdm import tqdm
 from map_to_binary import class_map_PM
 from dataset001_small_totalseg import generate_json_from_dir_v2
 import re
+from config import setup_nnunet
 
 
 if __name__ == "__main__":
@@ -13,12 +14,11 @@ if __name__ == "__main__":
     Convert the dataset to nnUNet format and generate dataset.json and splits_final.json
 
     example usage: 
-    python dataset007_CKI_segmentation.py C:/Users/20202119/PycharmProjects/segmentation_PM/data/three_regions_segmentation C:/Users/20202119/PycharmProjects/segmentation_PM/data/nnunet/raw/Dataset007_CKI_DATA class_map_3_regions
+    python dataset007_CKI_segmentation.py C:/Users/20202119/PycharmProjects/segmentation_PM/data/three_regions_segmentation_orig C:/Users/20202119/PycharmProjects/segmentation_PM/data/nnunet/raw/Dataset008_CKI_orig class_map_3_regions
 
     You must set nnUNet_raw and nnUNet_preprocessed environment variables before running this (see nnUNet documentation)
 
     """
-
     dataset_path = Path(sys.argv[1])  # directory containing all the subjects
     nnunet_path = Path(sys.argv[2])  # directory of the new nnunet dataset
     # nnunet_path.mkdir(parents=True, exist_ok=True)
@@ -48,13 +48,12 @@ if __name__ == "__main__":
         subject_path = dataset_path / "First_60_cases" / subject
         shutil.copy(subject_path, nnunet_path / "imagesTr" / f"{subject}")
 
-        label = re.sub(r'_(\d+)_\d+\.', r'_\1.', subject)
+        label = f'{subject[:5]}.nii.gz'
         label_path = dataset_path / "masks_1_3" / label
         shutil.copy(label_path, nnunet_path / "labelsTr" / f"{label}")
 
     # Extract the common part of the filenames for comparison
-    # common_part_ct_scan = "_0000.nii.gz"
-    common_part_ct_scan = ".nii.gz"
+    common_part_ct_scan = "_0000.nii.gz"
     subjects_train_new = [subject.replace(common_part_ct_scan, "") for subject in subjects_train]
     subjects_val_new = [subject.replace(common_part_ct_scan, "") for subject in subjects_val]
     generate_json_from_dir_v2(nnunet_path.name, subjects_train_new, subjects_val_new, class_map.values())

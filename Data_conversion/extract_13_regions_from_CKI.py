@@ -60,7 +60,7 @@ def extract_3_regions(input_folder):
         extracted_voxels, extracted_header = slicerio.extract_segments(voxels_data, header, segmentation_info,
                                                                        segment_names_to_labels)
         extracted_header['dimension'] = 3
-        directory = '../data/three_regions_segmentation/masks_1_3'
+        directory = '../data/three_regions_segmentation_orig/masks_1_3'
         os.makedirs(directory, exist_ok=True)
         output_path = os.path.join(directory, seg_label)
 
@@ -110,11 +110,11 @@ def compress_raw_image(input_folder, output_folder):
 
 if __name__ == "__main__":
     start_time = time.time()
-    # data_path = '../data/three_regions_segmentation/region_1_3_22012024/Segmentations_00057.seg.nrrd'
-    # input_path = '../data/three_regions_segmentation/region_1_3_22012024/*.nrrd'
+    # data_path = '../data/three_regions_segmentation_orig/region_1_3_22012024/Segmentations_00057.seg.nrrd'
+    # input_path = '../data/three_regions_segmentation_orig/region_1_3_22012024/*.nrrd'
 
-    input_folder = '../data/three_regions_segmentation/PM_scans_first60_1mm_nifti'
-    output_folder = '../data/three_regions_segmentation/First_60_cases'
+    input_folder = '../data/three_regions_segmentation_orig/PM_scans_first60_1mm_nifti'
+    output_folder = '../data/three_regions_segmentation_orig/First_60_cases'
     compress_raw_image(input_folder, output_folder)
 
     # check_data(data_path)
