@@ -7,7 +7,10 @@ from nn_algorithm_under_develop import crop_image, divide_background, restore_cr
 import os
 import glob
 from tqdm import tqdm
-import gzip
+import dicom2nifti
+from resample_data_itk import resample_img
+import SimpleITK as sitk
+
 
 def check_data(input_path):
 
@@ -28,7 +31,7 @@ def check_data(input_path):
     # print("First segment info:\n" + json.dumps(segment0, sort_keys=False, indent=4))
 
 
-def extract_3_regions(input_folder):
+def extract_3_regions(input_folder, output_folder):
 
     ''''
     following code is to extract the segmentations from the original segmentation file
@@ -36,9 +39,9 @@ def extract_3_regions(input_folder):
     # Get a list of .nrrd files in a directory
     nrrd_files = glob.glob(input_folder)
     count = 1
-    for file in nrrd_files:
+    for file in tqdm(nrrd_files):
 
-        seg_label = file[-14:-9]
+        seg_label = f's{file[-13:-9]}'
         print(f'Start processing scan {seg_label}....')
         # input_filename = os.path.join(input_path, file)
         # load the segmentation data information
@@ -60,11 +63,11 @@ def extract_3_regions(input_folder):
         extracted_voxels, extracted_header = slicerio.extract_segments(voxels_data, header, segmentation_info,
                                                                        segment_names_to_labels)
         extracted_header['dimension'] = 3
-        directory = '../data/three_regions_segmentation_orig/masks_1_3'
-        os.makedirs(directory, exist_ok=True)
-        output_path = os.path.join(directory, seg_label)
+        # directory = '../data/three_regions_segmentation_orig/masks_1_3'
+        os.makedirs(output_folder, exist_ok=True)
+        save_dir = os.path.join(output_folder, seg_label)
 
-        nifti_write(extracted_voxels, extracted_header, prefix=output_path)
+        nifti_write(extracted_voxels, extracted_header, prefix=save_dir)
         print(f'Finish processing scan {seg_label}, currently {count} files processed.')
         count += 1
 
@@ -108,17 +111,91 @@ def compress_raw_image(input_folder, output_folder):
             nib.save(nii_img, output_path)
 
 
+def start_dicom_to_nifti(input_folder, output_folder):
+    count = 0
+    for root, dirs, files in os.walk(input_folder):
+        # Create the corresponding directory structure in the output folder
+        # relative_path = os.path.relpath(root, input_folder)
+        # output_path = os.path.join(output_folder, relative_path)
+        # os.makedirs(output_path, exist_ok=True)
+
+        for file in files:
+            if file.endswith(".dcm"):
+                name = f"s{file[1:5]}_0000"
+                converted_data_save_dir = os.path.join(output_folder, name)
+                dcm_to_nifti(root, converted_data_save_dir)
+                count += 1
+                print(f"file {name} have been processed.{count}")
+                break  # Add the folder once and move on to the next
+
+
+def dcm_to_nifti(input_path, output_path):
+    """
+    Uses dicom2nifti package (also works on windows)
+
+    input_path: a directory of dicom slices
+    output_path: a nifti file path
+    """
+    dicom2nifti.dicom_series_to_nifti(input_path, output_path, reorient_nifti=False)
+
+
+def resample_image_from_folder(data_path, output_path, is_label=False):
+
+    # Get all nii.gz files in data_path
+    file_names = os.listdir(data_path)
+    # file_names = [f for f in file_names if '.nii.gz' in f]
+    # file_names.sort()
+    for f in tqdm(file_names):
+        # Read the .nii.gz file
+        itk_image = sitk.ReadImage(os.path.join(data_path, f))
+
+        # Resample the image for label!!! set to True
+        # resampled_sitk_img = resample_img(itk_image, is_label=True)
+
+        # Resample the image for image!!! set to false
+        resampled_sitk_img = resample_img(itk_image, is_label=is_label)
+
+        # Write the resampled image
+        sitk.WriteImage(resampled_sitk_img, os.path.join(output_path, f))
+
+
 if __name__ == "__main__":
     start_time = time.time()
-    # data_path = '../data/three_regions_segmentation_orig/region_1_3_22012024/Segmentations_00057.seg.nrrd'
-    # input_path = '../data/three_regions_segmentation_orig/region_1_3_22012024/*.nrrd'
 
-    input_folder = '../data/three_regions_segmentation_orig/PM_scans_first60_1mm_nifti'
-    output_folder = '../data/three_regions_segmentation_orig/First_60_cases'
-    compress_raw_image(input_folder, output_folder)
+    # note: step 1 and 2 can be skipped since for 3/13 regions seg use the same 60 scans,
+    # and they are already converted to nifti.gz format, they are located at
+    # ../data/three_regions_segmentation_orig/First_60_cases
 
-    # check_data(data_path)
-    # extract_3_regions(input_path)
+    # 'step 1: convert the image from dicom files to nifti files'
+    # raw_image_folder = '../code_test_folder/test_image'
+    #
+    # image_nifti_folder = tmp_dir / 'test_image_nifti'
+    # start_dicom_to_nifti(raw_image_folder, image_nifti_folder)
+    #
+    # 'step 2: the converted nifti files are .nii format, we need to compress them to .nii.gz format'
+    # path_for_compressed_data = tmp_dir / 'test_image_nifti_gz'
+    # compress_raw_image(image_nifti_folder, path_for_compressed_data)
+    '''replace the input and output path for step 3,4,5 with the correct path'''
+    'step 3: extract the 3 regions from the original segmentation file'
+
+    raw_label_folder = '../code_test_folder/test_mask/*.nrrd'
+    mask_save_dir = '../code_test_folder/extract_3_regions_orig'
+
+    extract_3_regions(raw_label_folder, mask_save_dir)
+
+    'step 4: resample the image spacing to 1.5mm x 1.5mm x 1.5mm'
+
+    raw_image_folder = '../code_test_folder/test_image'
+    resampled_image_save_dir = '../code_test_folder/test_image_resampled'
+    os.makedirs(resampled_image_save_dir, exist_ok=True)
+    resample_image_from_folder(raw_image_folder, resampled_image_save_dir, is_label=False)
+
+    'step 5: resample the label spacing to 1.5mm x 1.5mm x 1.5mm'
+    raw_label_folder = '../code_test_folder/extract_3_regions_orig'
+    resampled_label_save_dir = '../code_test_folder/extract_3_regions_resampled'
+    os.makedirs(resampled_label_save_dir, exist_ok=True)
+    resample_image_from_folder(raw_label_folder, resampled_label_save_dir, is_label=True)
+
     # nearest_neighbour()
     total_time = time.time() - start_time
     print(f"--- {total_time:.2f} seconds ---")
