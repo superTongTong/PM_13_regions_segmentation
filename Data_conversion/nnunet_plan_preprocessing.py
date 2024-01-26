@@ -2,6 +2,7 @@ from config import setup_nnunet
 import subprocess
 
 
+
 def plan_and_preprocess():
     # setup the nnUNet environment variables
     setup_nnunet()
