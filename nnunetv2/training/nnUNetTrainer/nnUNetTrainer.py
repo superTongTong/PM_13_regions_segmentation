@@ -124,7 +124,7 @@ class nnUNetTrainer(object):
             if nnUNet_preprocessed is not None else None
         timestamp = datetime.now()
         self.output_folder_base = join(nnUNet_results, self.plans_manager.dataset_name,
-                                       self.__class__.__name__ + '__' + self.plans_manager.plans_name + "__" + configuration + "_%02.0d_" % timestamp.second) \
+                                       self.__class__.__name__ + "%d_%d_%d_%02.0d_%02.0d" % (timestamp.year, timestamp.month, timestamp.day, timestamp.hour, timestamp.minute)) \
             if nnUNet_results is not None else None
         self.output_folder = join(self.output_folder_base, f'fold_{fold}')
 
