@@ -122,8 +122,9 @@ class nnUNetTrainer(object):
         # inference and some of the folders may not be defined!
         self.preprocessed_dataset_folder_base = join(nnUNet_preprocessed, self.plans_manager.dataset_name) \
             if nnUNet_preprocessed is not None else None
+        timestamp = datetime.now()
         self.output_folder_base = join(nnUNet_results, self.plans_manager.dataset_name,
-                                       self.__class__.__name__ + '__' + self.plans_manager.plans_name + "__" + configuration) \
+                                       self.__class__.__name__ + '__' + self.plans_manager.plans_name + "__" + configuration + "_%02.0d_" % timestamp.second) \
             if nnUNet_results is not None else None
         self.output_folder = join(self.output_folder_base, f'fold_{fold}')
 
@@ -164,7 +165,7 @@ class nnUNetTrainer(object):
         ### Simple logging. Don't take that away from me!
         # initialize log file. This is just our log for the print statements etc. Not to be confused with lightning
         # logging
-        timestamp = datetime.now()
+
         maybe_mkdir_p(self.output_folder)
         self.log_file = join(self.output_folder, "training_log_%d_%d_%d_%02.0d_%02.0d_%02.0d.txt" %
                              (timestamp.year, timestamp.month, timestamp.day, timestamp.hour, timestamp.minute,

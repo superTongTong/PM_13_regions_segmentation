@@ -1,7 +1,9 @@
 import os
 import socket
 from typing import Union, Optional
-
+# import sys
+# adding nnunetv2 to the system path
+# sys.path.insert(0, '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/')
 import nnunetv2
 import torch.cuda
 import torch.distributed as dist
@@ -37,7 +39,7 @@ def get_trainer_from_args(dataset_name_or_id: Union[int, str],
                           device: torch.device = torch.device('cuda')):
     # load nnunet class and do sanity checks
     nnunet_trainer = recursive_find_python_class(join(nnunetv2.__path__[0], "training", "nnUNetTrainer"),
-                                                trainer_name, 'nnunetv2.training.nnUNetTrainer')
+                                                 trainer_name, 'nnunetv2.training.nnUNetTrainer')
     if nnunet_trainer is None:
         raise RuntimeError(f'Could not find requested nnunet trainer {trainer_name} in '
                            f'nnunetv2.training.nnUNetTrainer ('

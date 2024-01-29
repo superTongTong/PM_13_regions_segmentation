@@ -5,8 +5,11 @@ from scipy.spatial import cKDTree
 
 
 '''
-加速算法思路： 
+加速算法思路1： 
 先放大13个区域，再筛选出重叠的部分，最后NN分割重叠的区域
+
+思路2：
+对label区域填充，在相互删减，可以得出空白区域。
 '''
 
 def divide_background(input_data, distance_threshold):
