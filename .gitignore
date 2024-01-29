@@ -11,6 +11,7 @@ __pycache__/
 *.txt
 # Distribution / packaging
 .Python
+plot_training_data/
 code_test_folder/
 build/
 develop-eggs/
