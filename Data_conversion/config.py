@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-# from nnunetv2.utilities.utils import get_filenames_of_train_images_and_targets
 
 
 def get_nnunet_dir():
