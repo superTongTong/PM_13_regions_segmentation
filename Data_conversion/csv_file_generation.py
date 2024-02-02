@@ -13,6 +13,7 @@ for root, dirs, files in os.walk(targeted_folder):
     for file in files:
         if file.endswith(".nii.gz"):
             # Randomly assign "train", "val", or "test" with specified ratios
+            random.seed(22)
             random_number = random.random()
             if random_number < train_ratio:
                 split = "train"
