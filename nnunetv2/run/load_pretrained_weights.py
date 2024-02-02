@@ -64,11 +64,11 @@ def load_pretrained_weights(network, fname, verbose=False):
         print("################### Done ###################")
     mod.load_state_dict(model_dict)
 
-    # # added code here, this code freezing the model except the seg_layers _YaoTong_31_Jan_2024
-    # for name, parameter in mod.named_parameters():
-    #     if '.seg_layers.' in name:
-    #         print(f"parameter '{name}' will not be freezed")
-    #         parameter.requires_grad = True
-    #     else:
-    #         parameter.requires_grad = False
+    # added code here, this code freezing the encoder layers _YaoTong_2_Feb_2024
+    for name, parameter in mod.named_parameters():
+        if 'decoder' in name:
+            print(f"parameter '{name}' will not be freezed")
+            parameter.requires_grad = True
+        else:
+            parameter.requires_grad = False
 
