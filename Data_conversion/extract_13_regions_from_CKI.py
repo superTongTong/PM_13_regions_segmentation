@@ -3,7 +3,7 @@ import nrrd
 from Data_conversion.nrrd_to_nifiti_conversion import nifti_write
 import time
 import nibabel as nib
-from nn_algorithm_under_develop import crop_image, divide_background, restore_cropped_image
+from nn_algorithm import *
 import os
 import glob
 from tqdm import tqdm
@@ -53,7 +53,7 @@ def extract_3_regions(input_folder, output_folder):
 
         # create list of name and labels for the 13 regions
         # example format: segment_names_to_labels = [("Segment_1", 1), ("Segment_1_1", 2), ("Segment_1_2", 3)]
-        for i in range(1, 4): # Currently we onty have 3 regions
+        for i in range(1, 14): # Currently we onty have 3 regions
             sge_name_label = (segment_names[i], i)
             segment_names_to_labels.append(sge_name_label)
 
@@ -72,23 +72,34 @@ def extract_3_regions(input_folder, output_folder):
         count += 1
 
 
-def nearest_neighbour():
-    source_file_path = "../code_test_folder/extracted_13_regions_from_CKI.nii.gz"
-    data_for_knn = nib.load(source_file_path)
-    fdata_knn = data_for_knn.get_fdata()
-    # crop the image
-    cropped_data, start_point, end_point = crop_image(fdata_knn)
+def nearest_neighbour_process(folder_in, folder_out):
+    # Check if the input folder exists
+    if not os.path.exists(folder_in):
+        raise FileNotFoundError(f"The input folder '{folder_in}' does not exist.")
+    # Create the output folder if it doesn't exist
+    os.makedirs(folder_out, exist_ok=True)
 
-    # Divide the background
-    after_nn_data = divide_background(cropped_data, 2)
+    ''''here call the function from nn_algorithm.py to process the data'''
+    # List all files in the input folder
+    nii_files = os.listdir(folder_in)
 
-    # Add zeros to the sub-array to restore it to the original shape
-    original_shape = fdata_knn.shape
-    restored_shape = restore_cropped_image(after_nn_data, end_point, start_point, original_shape)
+    for file in tqdm(nii_files):
+        if file.endswith('.nii'):
+            sitk_orig = sitk.ReadImage(f"{folder_in}/{file}", sitk.sitkInt8)
+            array_orig = sitk.GetArrayFromImage(sitk_orig)
+            c_image, t_image = closing_image(sitk_orig, kernel_radius=[10, 10, 10])
+            non_overlapped_voxel = find_non_overlap(c_image, t_image)
 
-    # Save the new NIfTI file
-    knn_nifti = nib.Nifti1Image(restored_shape, data_for_knn.affine)
-    nib.save(knn_nifti, "after_knn_processed.nii.gz")
+            processed_image = divide_overlapped_region(non_overlapped_voxel, array_orig, 10)
+
+            # covert the processed image to sitk image
+            img_for_save = sitk.GetImageFromArray(processed_image)
+            img_for_save.CopyInformation(sitk_orig)
+            save_dir = f"{folder_out}/after_nn"
+            os.makedirs(save_dir, exist_ok=True)
+
+            # Export Image
+            sitk.WriteImage(img_for_save, f"{save_dir}/{file}")
 
 
 def compress_raw_image(input_folder, output_folder):
@@ -196,6 +207,8 @@ if __name__ == "__main__":
     os.makedirs(resampled_label_save_dir, exist_ok=True)
     resample_image_from_folder(raw_label_folder, resampled_label_save_dir, is_label=True)
 
-    # nearest_neighbour()
+    'step 6: apply nn_algorithm to the resample the label '
+    nearest_neighbour_process(resampled_label_save_dir, '../code_test_folder/after_nn')
+
     total_time = time.time() - start_time
     print(f"--- {total_time:.2f} seconds ---")
