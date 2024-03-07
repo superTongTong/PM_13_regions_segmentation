@@ -104,7 +104,7 @@ def main():
     source_file_path = "./nn_algo/gt/s0059.nii.gz"
     sitk_orig = sitk.ReadImage(source_file_path, sitk.sitkInt8)
     array_orig = sitk.GetArrayFromImage(sitk_orig)
-    c_image, t_image = closing_image(sitk_orig)
+    c_image, t_image = closing_image(sitk_orig, kernel_radius=[10, 10, 10])
     non_overlapped_voxel = find_non_overlap(c_image, t_image)
 
     processed_image = divide_overlapped_region(non_overlapped_voxel, array_orig, 10)
