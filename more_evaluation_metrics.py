@@ -6,6 +6,7 @@ from surface_distance.metrics import (compute_surface_distances, compute_robust_
 import csv
 import os
 import time
+from Figure_3D_image import plot_3d_multi
 
 def compute_all_metrics(pred, gt, bor_pred, bor_gt, spacing):
     # Compute the surface distances
@@ -133,7 +134,6 @@ def main(prediction_file_path, ground_truth_file_path, dir_organs, case_number):
     avg_surface_dice_1mm = round(avg_surface_dice_1mm, 4)
     avg_surface_dice_2mm = round(avg_surface_dice_2mm, 4)
     avg_surface_dice_3mm = round(avg_surface_dice_3mm, 4)
-
 
     data.append({"Case ID": case_number, "Region_num": "average of 3 regions", "DSC": round(avg_DSC, 4),
                  "Border DSC": round(avg_border_DSC, 4), "hausdorff_distance": round(avg_hausdorff_distance, 4), "HD95": round(avg_HD95, 4),
