@@ -3,13 +3,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import imageio.v2 as imageio
+from Figure_3D_image import plot_3d_multi
 
 
 def create_seg_figure(background, color_seg, color_seg_pred, color_seg_diff, slice_idx, sample_id):
     background = np.transpose(background)
-    color_seg = np.transpose(color_seg, (1, 0, 2))
-    color_seg_pred = np.transpose(color_seg_pred, (1, 0, 2))
-    color_seg_diff = np.transpose(color_seg_diff, (1, 0, 2))
+    color_seg = np.transpose(color_seg, (1, 0, 2))#Anterior view
+    color_seg_pred = np.transpose(color_seg_pred, (1, 0, 2)) #Anterior view
+    color_seg_diff = np.transpose(color_seg_diff, (1, 0, 2))#Anterior view
     alpha = 0.3
     plt.figure(figsize=(10, 10))
 
@@ -188,17 +189,36 @@ def run_process(image_path, seg_path, target_path, sample_id):
     # color_segmentation_dif[differ_seg == 1] = [255, 0, 0]  # Red
     # color_segmentation_dif[differ_seg == 2] = [0, 255, 0]  # Green
     # color_segmentation_dif[differ_seg == 3] = [0, 0, 255]  # Blue
-    # Create masks for exclusive areas
-    exclusive_gt = np.logical_and(seg_target != seg_pred, seg_target != 0) # gt mask > pred mask
-    exclusive_pred = np.logical_and(seg_pred != seg_target, seg_pred != 0) # pred mask > gt mask
-    # Set colors for exclusive areas
-    color_segmentation_dif[exclusive_gt] = [255, 0, 255]  # pink for gt mask > pred mask
-    color_segmentation_dif[exclusive_pred] = [0, 255, 255]  # light aqua for pred mask > gt mask
+    #################################################
+    # # Create masks for exclusive areas
+    # exclusive_gt = np.logical_and(seg_target != seg_pred, seg_target != 0) # gt mask > pred mask
+    # exclusive_pred = np.logical_and(seg_pred != seg_target, seg_pred != 0) # pred mask > gt mask
+    # # Set colors for exclusive areas
+    # color_segmentation_dif[exclusive_gt] = [255, 0, 255]  # pink for gt mask > pred mask
+    # color_segmentation_dif[exclusive_pred] = [0, 255, 255]  # light aqua for pred mask > gt mask
+    #################################################
+    # Create masks for exclusive areas for each region
+    exclusive_gt_1 = np.logical_and(seg_target == 1, seg_target != seg_pred)
+    exclusive_gt_2 = np.logical_and(seg_target == 2, seg_target != seg_pred)
+    exclusive_gt_3 = np.logical_and(seg_target == 3, seg_target != seg_pred)
 
+    exclusive_pred_1 = np.logical_and(seg_pred == 1, seg_pred != seg_target)
+    exclusive_pred_2 = np.logical_and(seg_pred == 2, seg_pred != seg_target)
+    exclusive_pred_3 = np.logical_and(seg_pred == 3, seg_pred != seg_target)
+
+    # Set colors for exclusive areas
+    # color_segmentation_dif[exclusive_gt_1] = [255, 69, 0]  # Orange for exclusive to ground truth, region 1
+    # color_segmentation_dif[exclusive_gt_2] = [255, 69, 0]  # Orange for exclusive to ground truth, region 2
+    # color_segmentation_dif[exclusive_gt_3] = [255, 69, 0]  # Orange for exclusive to ground truth, region 3
+    #
+    # color_segmentation_dif[exclusive_pred_1] = [173, 216, 230]  # Light Blue for exclusive to prediction, region 1
+    # color_segmentation_dif[exclusive_pred_2] = [173, 216, 230]  # Light Blue for exclusive to prediction, region 2
+    # color_segmentation_dif[exclusive_pred_3] = [173, 216, 230]  # Light Blue for exclusive to prediction, region 3
+    #################################################
     # save segmentation result as gif
 
-    check_plot(background[:, 118, :],  color_segmentation_pred[:, 118, :])
-
+    # check_plot(background[:, 118, :],  color_segmentation_pred[:, 118, :])
+    plot_3d_multi(exclusive_gt_1, exclusive_gt_2, exclusive_gt_3, threshold=0.5, elev=180, azim=0)
     # create_gif_prediction(sample_id, background, color_segmentation, color_segmentation_pred, color_segmentation_dif, b)
 
 
@@ -216,7 +236,7 @@ if __name__ == '__main__':
     this is for testing the function
     '''
     sample_id = 's0046'
-    image_path = f'./3d_slicer_checker/images/{sample_id}_0000.nii.gz'
-    seg_path = f'./3d_slicer_checker/pred/{sample_id}.nii.gz'
-    target_path = f'./3d_slicer_checker/gt/{sample_id}.nii.gz'
+    image_path = f'./code_test_folder/3d_slicer_checker/images/{sample_id}_0000.nii.gz'
+    seg_path = f'./code_test_folder/3d_slicer_checker/pred/{sample_id}.nii.gz'
+    target_path = f'./code_test_folder/3d_slicer_checker/gt/{sample_id}.nii.gz'
     run_process(image_path, seg_path, target_path, sample_id)
