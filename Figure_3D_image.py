@@ -10,11 +10,11 @@ def plot_3d_multi(image1, image2=None, image3=None, image4=None,
     face_color1 = 'red'
     face_color2 = 'green'
     face_color3 = 'blue'
-    # face_color1 = 'sandybrown'
-    # face_color2 = 'cyan'
+    # face_color1 = 'cyan'
+    # face_color2 = 'sandybrown'
     # face_color3 = 'gold'
-    face_color4 = 'sandybrown'
-    face_color5 = 'cyan'
+    face_color4 = 'cyan'
+    face_color5 = 'sandybrown'
     face_color6 = 'gold'
     ####
     # Anterior view: image1.transpose(1,0,2); superior view: image1.transpose(0,1,2); left view: image1.transpose(2,1,0)
