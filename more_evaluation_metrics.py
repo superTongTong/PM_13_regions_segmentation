@@ -112,10 +112,11 @@ def main(prediction_file_path, ground_truth_file_path, dir_organs, case_number):
          surface_dice_2mm, surface_dice_3mm) = compute_all_metrics(array_pred_bool, array_gt_bool,
                                                                    b_pred_bool, b_gt_bool, sitk_spacing)
 
-        data.append({"Case ID": case_number, "Region_num": i, "DSC": DSC, "Inter-organ DSC": border_DSC, "HD95": HD95,
-                     "MASD gt to pred": MASD_gt_to_pred, "MASD pred to gt": MASD_pred_to_gt,
+        data.append({"Case ID": case_number, "Region_num": i, "DSC": DSC, "Inter-organ DSC": border_DSC,
                      "surface_dice_1mm": surface_dice_1mm,
-                     "surface_dice_2mm": surface_dice_2mm, "surface_dice_3mm": surface_dice_3mm})
+                     "surface_dice_2mm": surface_dice_2mm, "surface_dice_3mm": surface_dice_3mm,
+                     "HD95": HD95,"MASD gt to pred": MASD_gt_to_pred, "MASD pred to gt": MASD_pred_to_gt})
+
     avg_DSC = (data[0]["DSC"] + data[1]["DSC"] + data[2]["DSC"]) / 3
     avg_border_DSC = (data[0]["Inter-organ DSC"] + data[1]["Inter-organ DSC"] + data[2]["Inter-organ DSC"]) / 3
     # avg_hausdorff_distance = (data[0]["hausdorff_distance"] + data[1]["hausdorff_distance"] + data[2]["hausdorff_distance"]) / 3
@@ -137,10 +138,10 @@ def main(prediction_file_path, ground_truth_file_path, dir_organs, case_number):
     avg_surface_dice_3mm = round(avg_surface_dice_3mm, 4)
 
     data.append({"Case ID": case_number, "Region_num": "average of 3 regions", "DSC": round(avg_DSC, 4),
-                 "Inter-organ DSC": round(avg_border_DSC, 4), "HD95": round(avg_HD95, 4),
-                 "MASD gt to pred": round(avg_MASD_gt_to_pred, 4), "MASD pred to gt": round(avg_MASD_pred_to_gt, 4),
-                 "surface_dice_1mm": round(avg_surface_dice_1mm, 4), "surface_dice_2mm": round(avg_surface_dice_2mm, 4),
-                 "surface_dice_3mm": round(avg_surface_dice_3mm, 4)})
+                 "Inter-organ DSC": round(avg_border_DSC, 4),"surface_dice_1mm": round(avg_surface_dice_1mm, 4),
+                 "surface_dice_2mm": round(avg_surface_dice_2mm, 4),
+                 "surface_dice_3mm": round(avg_surface_dice_3mm, 4), "HD95": round(avg_HD95, 4),
+                 "MASD gt to pred": round(avg_MASD_gt_to_pred, 4), "MASD pred to gt": round(avg_MASD_pred_to_gt, 4)})
     return data
 
 
@@ -184,5 +185,5 @@ if __name__ == "__main__":
     # plot_bar(df)
 
     # Save the DataFrame to a csv file
-    df.to_csv("./code_test_folder/3d_slicer_checker/evaluation_metrics_v2.csv", index=False)
+    df.to_csv("./code_test_folder/3d_slicer_checker/evaluation_metrics.csv", index=False)
     print("--- Total time %s seconds ---" % round(time.time() - start_time, 2))
