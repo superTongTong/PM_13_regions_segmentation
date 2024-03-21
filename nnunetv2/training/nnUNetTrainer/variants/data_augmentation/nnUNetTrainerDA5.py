@@ -415,8 +415,8 @@ class nnUNetTrainerDA5Segord0(nnUNetTrainerDA5):
         return mt_gen_train, mt_gen_val
 
 
-class nnUNetTrainerDA5_50epochs(nnUNetTrainerDA5):
+class nnUNetTrainerDA5_500epochs(nnUNetTrainerDA5):
     def __init__(self, plans: dict, configuration: str, fold: int, dataset_json: dict, unpack_dataset: bool = True,
                  device: torch.device = torch.device('cuda')):
         super().__init__(plans, configuration, fold, dataset_json, unpack_dataset, device)
-        self.num_epochs = 50
+        self.num_epochs = 500
