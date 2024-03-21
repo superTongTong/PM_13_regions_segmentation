@@ -3,12 +3,12 @@ import nrrd
 from Data_conversion.nrrd_to_nifiti_conversion import nifti_write
 import time
 import nibabel as nib
-from nn_algorithm import *
+from .nn_algorithm import *
 import os
 import glob
 from tqdm import tqdm
 import dicom2nifti
-from resample_data_itk import resample_img
+from .resample_data_itk import resample_img
 import SimpleITK as sitk
 
 
@@ -84,10 +84,12 @@ def nearest_neighbour_process(folder_in, folder_out):
     nii_files = os.listdir(folder_in)
 
     for file in tqdm(nii_files):
-        if file.endswith('.nii'):
+        # if file.endswith('.nii'):
+        suffixes = ('.nii', '.nii.gz')
+        if file.endswith(suffixes):
             sitk_orig = sitk.ReadImage(f"{folder_in}/{file}", sitk.sitkInt8)
             array_orig = sitk.GetArrayFromImage(sitk_orig)
-            c_image, t_image = closing_image(sitk_orig, kernel_radius=[10, 10, 10])
+            c_image, t_image = closing_image(sitk_orig, kernel_radius=[3, 3, 3])
             non_overlapped_voxel = find_non_overlap(c_image, t_image)
 
             processed_image = divide_overlapped_region(non_overlapped_voxel, array_orig, 10)
@@ -100,6 +102,7 @@ def nearest_neighbour_process(folder_in, folder_out):
 
             # Export Image
             sitk.WriteImage(img_for_save, f"{save_dir}/{file}")
+
 
 
 def compress_raw_image(input_folder, output_folder):
