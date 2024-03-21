@@ -69,7 +69,7 @@ class nnUNetTrainerDA5(nnUNetTrainer):
                 }
             else:
                 rotation_for_DA = {
-                    'x': (-30. / 360 * 2. * np.pi, 30. / 360 * 2. * np.pi),
+                    'x': (-30. / 360 * 2. * np.pi, 30. / 360 * 2. * np.pi),# rotation alone x axis +- 30 degree
                     'y': (-30. / 360 * 2. * np.pi, 30. / 360 * 2. * np.pi),
                     'z': (-30. / 360 * 2. * np.pi, 30. / 360 * 2. * np.pi),
                 }
@@ -415,8 +415,8 @@ class nnUNetTrainerDA5Segord0(nnUNetTrainerDA5):
         return mt_gen_train, mt_gen_val
 
 
-class nnUNetTrainerDA5_10epochs(nnUNetTrainerDA5):
+class nnUNetTrainerDA5_50epochs(nnUNetTrainerDA5):
     def __init__(self, plans: dict, configuration: str, fold: int, dataset_json: dict, unpack_dataset: bool = True,
                  device: torch.device = torch.device('cuda')):
         super().__init__(plans, configuration, fold, dataset_json, unpack_dataset, device)
-        self.num_epochs = 10
+        self.num_epochs = 50
