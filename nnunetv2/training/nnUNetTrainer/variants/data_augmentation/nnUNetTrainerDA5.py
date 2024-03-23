@@ -175,9 +175,9 @@ class nnUNetTrainerDA5(nnUNetTrainer):
 
         tr_transforms.append(BrightnessTransform(0,
                                                  0.5,
-                                                 per_channel=False, # True,
-                                                 p_per_sample=0.0, # 0.1,
-                                                 p_per_channel=0.0 # 0.5
+                                                 per_channel=True,
+                                                 p_per_sample=0.1,
+                                                 p_per_channel=0.5
                                                  )
                              )
 
@@ -239,8 +239,8 @@ class nnUNetTrainerDA5(nnUNetTrainer):
                 max_strength=_brightness_gradient_additive_max_strength,
                 mean_centered=False,
                 same_for_all_channels=False,
-                p_per_sample=0.0, # 0.3,
-                p_per_channel=0.0, # 0.5
+                p_per_sample=0.3,
+                p_per_channel=0.5
             )
         )
 
@@ -250,8 +250,8 @@ class nnUNetTrainerDA5(nnUNetTrainer):
                 (-0.5, 1.5),
                 _local_gamma_gamma,
                 same_for_all_channels=False,
-                p_per_sample=0.0, #0.3,
-                p_per_channel=0.0, #0.5
+                p_per_sample=0.3,
+                p_per_channel=0.5
             )
         )
 
