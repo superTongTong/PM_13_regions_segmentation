@@ -69,7 +69,7 @@ class nnUNetTrainerDA5(nnUNetTrainer):
                 }
             else:
                 rotation_for_DA = {
-                    'x': (-30. / 360 * 2. * np.pi, 30. / 360 * 2. * np.pi),# rotation alone x axis +- 30 degree
+                    'x': (-30. / 360 * 2. * np.pi, 30. / 360 * 2. * np.pi),# rotation alone x axis +- 30 degree -Yao
                     'y': (-30. / 360 * 2. * np.pi, 30. / 360 * 2. * np.pi),
                     'z': (-30. / 360 * 2. * np.pi, 30. / 360 * 2. * np.pi),
                 }
@@ -158,7 +158,7 @@ class nnUNetTrainerDA5(nnUNetTrainer):
                 TransposeAxesTransform(valid_axes, data_key='data', label_key='seg', p_per_sample=0.5)
             )
 
-        tr_transforms.append(OneOfTransform([
+        tr_transforms.append(OneOfTransform([  # extra
             MedianFilterTransform(
                 (2, 8),
                 same_for_each_channel=False,
@@ -175,13 +175,13 @@ class nnUNetTrainerDA5(nnUNetTrainer):
 
         tr_transforms.append(BrightnessTransform(0,
                                                  0.5,
-                                                 per_channel=True,
-                                                 p_per_sample=0.1,
-                                                 p_per_channel=0.5
+                                                 per_channel=False, # True,
+                                                 p_per_sample=0.0, # 0.1,
+                                                 p_per_channel=0.0 # 0.5
                                                  )
                              )
 
-        tr_transforms.append(OneOfTransform(
+        tr_transforms.append(OneOfTransform( # extensive
             [
                 ContrastAugmentationTransform(
                     contrast_range=(0.5, 2),
@@ -203,7 +203,7 @@ class nnUNetTrainerDA5(nnUNetTrainer):
         ))
 
         tr_transforms.append(
-            SimulateLowResolutionTransform(zoom_range=(0.25, 1),
+            SimulateLowResolutionTransform(zoom_range=(0.25, 1), #different zoom_range=(0.5, 1), p_per_sample=0.25
                                            per_channel=True,
                                            p_per_channel=0.5,
                                            order_downsample=0,
@@ -216,11 +216,12 @@ class nnUNetTrainerDA5(nnUNetTrainer):
         tr_transforms.append(
             GammaTransform((0.7, 1.5), invert_image=True, per_channel=True, retain_stats=True, p_per_sample=0.1))
         tr_transforms.append(
-            GammaTransform((0.7, 1.5), invert_image=True, per_channel=True, retain_stats=True, p_per_sample=0.1))
+            GammaTransform((0.7, 1.5), invert_image=True, per_channel=True, retain_stats=True, p_per_sample=0.1)) # diff p_per_sample=0.3
 
         if mirror_axes is not None and len(mirror_axes) > 0:
             tr_transforms.append(MirrorTransform(mirror_axes))
 
+        # extra noise transformer
         tr_transforms.append(
             BlankRectangleTransform([[max(1, p // 10), p // 3] for p in patch_size],
                                     rectangle_value=np.mean,
@@ -238,8 +239,8 @@ class nnUNetTrainerDA5(nnUNetTrainer):
                 max_strength=_brightness_gradient_additive_max_strength,
                 mean_centered=False,
                 same_for_all_channels=False,
-                p_per_sample=0.3,
-                p_per_channel=0.5
+                p_per_sample=0.0, # 0.3,
+                p_per_channel=0.0, # 0.5
             )
         )
 
@@ -249,8 +250,8 @@ class nnUNetTrainerDA5(nnUNetTrainer):
                 (-0.5, 1.5),
                 _local_gamma_gamma,
                 same_for_all_channels=False,
-                p_per_sample=0.3,
-                p_per_channel=0.5
+                p_per_sample=0.0, #0.3,
+                p_per_channel=0.0, #0.5
             )
         )
 
