@@ -4,6 +4,7 @@ from batchgenerators.transforms.abstract_transforms import AbstractTransform
 
 from nnunetv2.training.nnUNetTrainer.nnUNetTrainer import nnUNetTrainer
 import numpy as np
+import torch
 
 
 class nnUNetTrainerNoDA(nnUNetTrainer):
@@ -38,3 +39,9 @@ class nnUNetTrainerNoDA(nnUNetTrainer):
         self.inference_allowed_mirroring_axes = None
         return rotation_for_DA, do_dummy_2d_data_aug, initial_patch_size, mirror_axes
 
+
+class nnUNetTrainerNoDA_500epochs(nnUNetTrainerNoDA):
+    def __init__(self, plans: dict, configuration: str, fold: int, dataset_json: dict, unpack_dataset: bool = True,
+                 device: torch.device = torch.device('cuda')):
+        super().__init__(plans, configuration, fold, dataset_json, unpack_dataset, device)
+        self.num_epochs = 500
