@@ -104,7 +104,6 @@ def nearest_neighbour_process(folder_in, folder_out):
             sitk.WriteImage(img_for_save, f"{save_dir}/{file}")
 
 
-
 def compress_raw_image(input_folder, output_folder):
     # Create the output folder if it doesn't exist
     os.makedirs(output_folder, exist_ok=True)
