@@ -1,9 +1,4 @@
-
-from tqdm import tqdm
-import os
 import dicom2nifti
-from dicom2nifti.common import validate_slice_increment
-import nibabel as nib
 import shutil
 import tempfile
 from pathlib import Path
