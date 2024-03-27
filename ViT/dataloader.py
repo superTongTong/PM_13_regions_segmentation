@@ -1,57 +1,48 @@
-from __future__ import print_function
 
-import glob
-from itertools import chain
-import os
-import random
-import zipfile
-
-import matplotlib.pyplot as plt
+import torch.nn.functional as F
 import numpy as np
-import pandas as pd
+from torchvision import transforms
+import SimpleITK as sitk
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-from PIL import Image
-from sklearn.model_selection import train_test_split
-from torch.optim.lr_scheduler import StepLR
-from torch.utils.data import DataLoader, Dataset
-from torchvision import datasets, transforms
-from tqdm.notebook import tqdm
+import glob
 
-import torchvision.transforms.functional as TF
-from torch.autograd import Variable
-import torch.nn.functional as F
-import io
-import nibabel  # to read .hdr/.img files
-import numpy
-from vit_yao import vit_abdomen
-#from vit_pytorch.efficient import ViT
-#from vit_pytorch import ViT
-# from vit_pytorch import ViT3
+class PCI_Dataset_3D():
 
-def resize2d(img, size):
-    return F.adaptive_avg_pool2d(Variable(img),size).data
+    def __init__(self, file_list, label_list, transform=None):
+        self.file_list = file_list
+        self.label_list = label_list
+        self.transform = transform
 
-def seed_everything(seed):
-    random.seed(seed)
-    os.environ['PYTHONHASHSEED'] = str(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.deterministic = True
+    def __len__(self):
+        self.filelength = len(self.file_list)
+        return self.filelength
+
+    def __getitem__(self, idx):
+        img_path = self.file_list[idx]
+        img = sitk.ReadImage(img_path)
+        img = sitk.GetArrayFromImage(img)
+
+        img2 = torch.tensor(np.array(img))
+        img_transformed = img2.permute(3, 2, 0, 1)
+
+        label = self.label_list[idx]
+        y_one_hot = F.one_hot(label, num_classes=4).squeeze(0)
+        y = torch.transpose(y_one_hot, 0, 2)
+
+        return img_transformed, y
+
 
 def main():
-    # Training settings
-    batch_size = 4  # 64
-    epochs = 40  # 10   #20 #10 #50 #20
-    lr = 3e-5
-    gamma = 0.7
-    seed = 42  # 42
-    seed_everything(seed)
+    train_transforms = transforms.Compose(
+        [
+            transforms.Resize((224, 224)),
+            transforms.RandomResizedCrop(224),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+        ]
+    )
 
-def load_data_from_zip(zip_path):
-    with zipfile.ZipFile(zip_path, 'r') as z:
-        z.extractall()
+    data_dir = '..data/data_ViT/images'
+    mask_dir = '..data/data_ViT/masks'
+    file_list = glob.glob(data_dir + '/*.nii.gz')
+
