@@ -1,48 +1,119 @@
-
-import torch.nn.functional as F
-import numpy as np
 from torchvision import transforms
-import SimpleITK as sitk
-import torch
+import numpy as np
 import glob
+from PCI_dataset import PCI_Dataset
+from base_data_loader import BaseDataLoader
+from monai.transforms import (
+    Compose,
+    LoadImaged,
+    EnsureChannelFirst,
+    CropForegroundd,
+    Spacingd,
+    Orientationd,
+    SpatialPadd,
+    NormalizeIntensityd,
+    RandCropByPosNegLabeld,
+    RandRotated,
+    RandZoomd,
+    CastToTyped,
+    RandGaussianNoised,
+    RandGaussianSmoothd,
+    RandAdjustContrastd,
+    RandFlipd,
+    ToTensord,
+)
 
-class PCI_Dataset_3D():
 
-    def __init__(self, file_list, label_list, transform=None):
-        self.file_list = file_list
-        self.label_list = label_list
-        self.transform = transform
+def pci_train_transform(image_key, spatial_size=(64,64,64)):
+    train_transform = Compose([
+        # AddChanneld(keys=all_keys),
+        # EnsureChannelFirst(channel_dim=image_keys),
+        # CropForegroundd(keys=all_keys, source_key=image_keys[0]),
+        Orientationd(keys=image_key, axcodes="RAS"),
+        SpatialPadd(keys=image_key, spatial_size=spatial_size),
+        # RandZoomd(
+        #     keys=image_key,
+        #     min_zoom=0.7,
+        #     max_zoom=1.5,
+        #     mode=("bilinear",) * len(image_key) + ("nearest",),
+        #     align_corners=(True,) * len(image_key) + (None,),
+        #     prob=0.1,
+        # ),
+        # RandRotated(
+        #     keys=all_keys,
+        #     range_x=(-15. / 360 * 2. * np.pi, 15. / 360 * 2. * np.pi),
+        #     range_y=(-15. / 360 * 2. * np.pi, 15. / 360 * 2. * np.pi),
+        #     mode=("bilinear",) * len(image_keys) + ("nearest",),
+        #     align_corners=(True,) * len(image_keys) + (None,),
+        #     padding_mode=("border", ) * len(all_keys),
+        #     prob=0.3,
+        # ),
+        # RandAdjustContrastd(  # same as Gamma in nnU-Net
+        #     keys=image_keys,
+        #     gamma=(0.7, 1.5),
+        #     prob=0.3,
+        # ),
+        # RandFlipd(image_key, spatial_axis=[0], prob=0),  # Only right-left flip
+        NormalizeIntensityd(keys=image_key, nonzero=True, channel_wise=True),
+        # CastToTyped(keys=image_key, dtype=(np.float32,) * len(image_key) + (np.uint8,)),
+        ToTensord(keys=image_key),
+    ])
+    return train_transform
 
-    def __len__(self):
-        self.filelength = len(self.file_list)
-        return self.filelength
 
-    def __getitem__(self, idx):
-        img_path = self.file_list[idx]
-        img = sitk.ReadImage(img_path)
-        img = sitk.GetArrayFromImage(img)
+def pci_validation_transform(image_key, spatial_size=(64,64,64)):
+    val_transform = Compose([
+        # AddChanneld(keys=all_keys),
+        # EnsureChannelFirst(channel_dim=image_keys),
+        # CropForegroundd(keys=all_keys, source_key=image_keys[0]),
+        Orientationd(keys=image_key, axcodes="RAS"),
+        SpatialPadd(keys=image_key, spatial_size=spatial_size),
+        NormalizeIntensityd(keys=image_key, nonzero=True, channel_wise=True),
+        # CastToTyped(keys=image_key, dtype=(np.float32,) * len(image_key) + (np.uint8,)),
+        ToTensord(keys=image_key),
+    ])
+    return val_transform
 
-        img2 = torch.tensor(np.array(img))
-        img_transformed = img2.permute(3, 2, 0, 1)
+class PCI_DataLoader(BaseDataLoader):
+    """
+    PCI score dataset Data Loader.
+    """
+    def __init__(self, data_dir, batch_size, shuffle=True, validation_split=0.0, num_workers=1, split='train',
+                 prefetch_factor=2):
 
-        label = self.label_list[idx]
-        y_one_hot = F.one_hot(label, num_classes=4).squeeze(0)
-        y = torch.transpose(y_one_hot, 0, 2)
+        train_transform = transforms.Compose([
+            pci_train_transform(image_key='image')
+        ])
 
-        return img_transformed, y
+        validation_transform = transforms.Compose([
+            pci_validation_transform(image_key='image')
+        ])
+
+        # Store the train/test/validation dataset location
+        self.data_dir = data_dir
+
+        # train dataset
+        if split == 'train':
+            self.dataset = PCI_Dataset(self.data_dir, split=split, transform=train_transform)
+
+        # test/validation dataset
+        elif split == 'test' or split == 'validation':
+            self.dataset = PCI_Dataset(self.data_dir, split=split, transform=validation_transform)
+        else:
+            raise ValueError('Invalid split name: {}'.format(split))
+
+        super().__init__(self.dataset, batch_size, shuffle, validation_split,
+                         num_workers, prefetch_factor=prefetch_factor)
 
 
 def main():
-    train_transforms = transforms.Compose(
-        [
-            transforms.Resize((224, 224)),
-            transforms.RandomResizedCrop(224),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-        ]
-    )
+    data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan/'
+    # test the data loader
+    train_loader = PCI_DataLoader(data_dir, batch_size=1, shuffle=True, split='train')
+    valid_loader = PCI_DataLoader(data_dir, batch_size=1, shuffle=False, split='validation')
+    print('train_loader:', len(train_loader))
+    print('valid_loader:', len(valid_loader))
 
-    data_dir = '..data/data_ViT/images'
-    mask_dir = '..data/data_ViT/masks'
-    file_list = glob.glob(data_dir + '/*.nii.gz')
+if __name__ == '__main__':
+    main()
 
