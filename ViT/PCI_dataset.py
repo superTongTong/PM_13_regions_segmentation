@@ -4,7 +4,8 @@ from torch.utils import data
 import os
 import torch.nn.functional as F
 import numpy as np
-
+import matplotlib.pyplot as plt
+from monai.data import CacheDataset
 
 class PCI_Dataset(data.Dataset):
     def __init__(self,
@@ -32,7 +33,7 @@ class PCI_Dataset(data.Dataset):
         # get the list of all the cases (example=s0007_0001_R1_3) we only need 'sxxxx_xxxx_Rx'
         self.cases = sorted([self.file_names[i][:13] for i in range(0, self.n_files)])
 
-        print('cases: {}'.format(self.cases))
+        # print('cases: {}'.format(self.cases))
 
     def __len__(self):
         return self.n_files
@@ -41,29 +42,30 @@ class PCI_Dataset(data.Dataset):
                     idx: int):
 
         img_path = os.path.join(self.data_dir_img, self.file_names[idx])
-        # img_path = self.data_dir_img[idx]
-        img = sitk.ReadImage(img_path)
-        img = sitk.GetArrayFromImage(img)
-
-        img = torch.tensor(np.array(img))
-        # placeholders
-        img_dict = {}
-        img_dict.update({'image': img})
-        # x = img2.permute(2, 0, 1)
+        # img = self.transform(img_path[idx])
 
         label = int(self.file_names[idx][14:15])
         y_in = torch.tensor(label)
         y_one_hot = F.one_hot(y_in, num_classes=4)
+        data_files = {"image": img_path, "label": y_one_hot}
 
-        return img_dict, y_one_hot
+        return data_files
 
 
 def test():
     data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan/'
     # mask_dir = 'data/data_ViT/masks'
-    dataset = PCI_Dataset(data_dir, split='train')
-    print(len(dataset))
-    print(dataset[0])
+    dataset = PCI_Dataset(data_dir, split='validation')
+
+    for i, data in enumerate(dataset):
+        img = data[0]
+        # img = img['image']
+        img_array = img.numpy()
+        sqzzed = np.squeeze(img_array)
+        plt.figure("visualize", (8, 4))
+        plt.title("image")
+        plt.imshow(sqzzed[:, :, 30], cmap="gray")
+        plt.show()
 
 
 if __name__ == '__main__':
