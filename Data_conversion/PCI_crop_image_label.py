@@ -78,7 +78,7 @@ def mian():
     data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/images'
     mask_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/masks'
     save_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan'
-    csv_path = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/PCI_v1.csv'
+    csv_path = '/data/data_ViT/PCI_3_regions.csv'
     random_seed = 42
     df = pd.read_csv(csv_path)
 
