@@ -65,10 +65,14 @@ def load_pretrained_weights(network, fname, verbose=False):
     mod.load_state_dict(model_dict)
 
     # added code here, this code freezing the encoder layers _YaoTong_2_Feb_2024
-    # for name, parameter in mod.named_parameters():
-    #     if 'decoder' in name:
-    #         print(f"parameter '{name}' will not be freezed")
-    #         parameter.requires_grad = True
-    #     else:
-    #         parameter.requires_grad = False
+    for name, parameter in mod.named_parameters():
+        if 'encoder' in name:
+            print(f"parameter '{name}' will not be frozen")
+            parameter.requires_grad = True
+        elif 'decoder' in name:
+            print(f"parameter '{name}' will not be frozen")
+            parameter.requires_grad = True
+        else:
+            print(f"parameter '{name}' will be frozen")
+            parameter.requires_grad = False
 
