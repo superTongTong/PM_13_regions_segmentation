@@ -27,8 +27,8 @@ def pci_transform(spatial_size=(128, 128, 128)):
         # CropForegroundd(keys=all_keys, source_key=image_keys[0]),
         Orientationd(keys=["image"], axcodes="RAS"),
         Resized(keys=["image"], spatial_size=spatial_size),
-        # HU windowing for abdomen CT images: [-75, 175]
-        ScaleIntensityRanged(keys=["image"], a_min=-75, a_max=175, b_min=0.0, b_max=1.0, clip=True),
+        # HU windowing for abdomen CT images: [-200, 300]
+        ScaleIntensityRanged(keys=["image"], a_min=-200, a_max=300, b_min=0.0, b_max=1.0, clip=True),
         # EnsureTyped(keys=["image"]),
         ToTensord(keys=["image"]),
     ])
@@ -62,7 +62,7 @@ def get_data_list(data_dir, split='train'):
     return images, labels
 
 
-def PCI_DataLoader(data_dir, batch_size=1, shuffle=True, split='train', spatial_size=(64, 64, 64), num_workers=2):
+def PCI_DataLoader(data_dir, batch_size=1, shuffle=True, split='train', spatial_size=(128, 128, 128), num_workers=2):
     imgs, labels = get_data_list(data_dir, split=split)
     data_files = [{"image": i, "label": l} for i, l in zip(imgs, labels)]
     ds = CacheDataset(data=data_files, transform=pci_transform(spatial_size=spatial_size))
@@ -76,11 +76,13 @@ def main():
     for i, data in enumerate(val_loader):
         # img = data[0]
         img = data['image']
+        # name = img[meta]['filename_or_obj']
         img_array = img.numpy()
         sqzzed = np.squeeze(img_array)
         plt.figure("visualize", (8, 4))
-        plt.title("image")
-        plt.imshow(sqzzed[30, :, :], cmap="gray")
+        print("array:", sqzzed.shape)
+        # plt.title(f"caseID: {name}")
+        plt.imshow(sqzzed[:, :, 30], cmap="gray")
         plt.show()
 
 if __name__ == '__main__':
