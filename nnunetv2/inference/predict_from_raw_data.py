@@ -56,6 +56,7 @@ class nnUNetPredictor(object):
         self.use_gaussian = use_gaussian
         self.use_mirroring = use_mirroring
         if device.type == 'cuda':
+            print(f'perform_everything_on_device={perform_everything_on_device}')
             # device = torch.device(type='cuda', index=0)  # set the desired GPU with CUDA_VISIBLE_DEVICES!
             # why would I ever want to do that. Stupid dobby. This kills DDP inference...
             pass

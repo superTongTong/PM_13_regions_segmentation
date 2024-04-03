@@ -6,24 +6,38 @@ import os
 
 
 def get_3_region_masks():
-
+    device = 'cuda'
+    assert device in ['cpu', 'cuda',
+                      'mps'], f'-device must be either cpu, mps or cuda. Other devices are not tested/supported. Got: {device}.'
+    if device == 'cpu':
+        # let's allow torch to use hella threads
+        import multiprocessing
+        torch.set_num_threads(multiprocessing.cpu_count())
+        device = torch.device('cpu')
+    elif device == 'cuda':
+        # multithreading in torch doesn't help nnU-Net if run on GPU
+        torch.set_num_threads(1)
+        # torch.set_num_interop_threads(1)  # throws error if setting the second time
+        device = torch.device('cuda')
+    else:
+        device = torch.device('mps')
     setup_nnunet()
     nnUNet_raw = os.environ.get('nnUNet_raw')
     # nnUNet_preprocessed = os.environ.get('nnUNet_preprocessed')
     nnUNet_results = os.environ.get('nnUNet_results')
     pretrained_path = Path('Dataset017_Resampled_nn_scratch/nnUNetTrainer_500epochs2024_3_23_13_55')
-    i_path = Path('Dataset017_Resampled_nn_scratch/imagesTs')
-    o_path = Path('Dataset017_Resampled_nn_scratch/imagesTs_pred')
+    i_path = Path('/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/raw_data/')
+    o_path = Path('/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/masks')
     pretrained_model_path = os.path.join(nnUNet_results, pretrained_path)
-    input_path = os.path.join(nnUNet_raw, i_path)
-    output_path = os.path.join(nnUNet_raw, o_path)
+    # input_path = os.path.join(nnUNet_raw, i_path)
+    # output_path = os.path.join(nnUNet_raw, o_path)
     # instantiate the nnUNetPredictor
     predictor = nnUNetPredictor(
         tile_step_size=0.5,
         use_gaussian=True,
-        use_mirroring=True,
+        use_mirroring=False,
         perform_everything_on_device=True,
-        device=torch.device('cuda', 0),
+        device=device,
         verbose=False,
         verbose_preprocessing=False,
         allow_tqdm=True
@@ -32,10 +46,10 @@ def get_3_region_masks():
     predictor.initialize_from_trained_model_folder(pretrained_model_path, use_folds=(0,),
                                                    checkpoint_name='checkpoint_best.pth')
     # variant 1: give input and output folders
-    predictor.predict_from_files(input_path,
-                                 output_path,
+    predictor.predict_from_files(i_path,
+                                 o_path,
                                  save_probabilities=False, overwrite=False,
-                                 num_processes_preprocessing=2, num_processes_segmentation_export=2,
+                                 num_processes_preprocessing=12, num_processes_segmentation_export=12,
                                  folder_with_segs_from_prev_stage=None, num_parts=1, part_id=0)
 
 
