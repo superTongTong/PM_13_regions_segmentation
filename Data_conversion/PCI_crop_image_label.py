@@ -75,10 +75,14 @@ def crop_based_mask(ct_image_path, seg_mask_path, idx):
 
 
 def mian():
-    data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/images'
-    mask_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/masks'
-    save_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan'
-    csv_path = '/data/data_ViT/PCI_3_regions.csv'
+    # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/images'
+    # mask_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/masks'
+    # save_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan'
+    # csv_path = '/data/data_ViT/PCI_3_regions.csv'
+    data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/raw_data/'
+    mask_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/masks/'
+    save_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan'
+    csv_path = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/PCI_3_regions_new.csv'
     random_seed = 42
     df = pd.read_csv(csv_path)
 
@@ -100,7 +104,7 @@ def mian():
         for i in range(1, 4):
             region_score = case_PCI[f'R{i}'].values
             sc = region_score[0]
-            crop_img = crop_based_mask(img_path, mask_path, i)
+            crop_img = extract_roi_based_mask(img_path, mask_path, i)
             name = img_name.split('.')[0]
             sitk.WriteImage(crop_img, f"{save_train_dir}/{name}_R{i}_{sc}.nii.gz")
         # break
@@ -115,7 +119,7 @@ def mian():
         for i in range(1, 4):
             region_score = case_PCI[f'R{i}'].values
             sc = region_score[0]
-            crop_img = crop_based_mask(img_path, mask_path, i)
+            crop_img = extract_roi_based_mask(img_path, mask_path, i)
             name = img_name.split('.')[0]
             sitk.WriteImage(crop_img, f"{save_val_dir}/{name}_R{i}_{sc}.nii.gz")
 
