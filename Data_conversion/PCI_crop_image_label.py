@@ -78,7 +78,7 @@ def mian():
     # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/images'
     # mask_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/masks'
     # save_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan'
-    # csv_path = '/data/data_ViT/PCI_3_regions.csv'
+    # csv_path = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/PCI_3_regions.csv'
     data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/raw_data/'
     mask_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/masks/'
     save_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan'
@@ -98,7 +98,8 @@ def mian():
         os.makedirs(save_train_dir, exist_ok=True)
         case_PCI = df[df['CaseID'] == img_name.split('.')[0]]
 
-        mask_path = os.path.join(mask_dir, img_name)
+        mask_d = img_name.replace('_0001', '')
+        mask_path = os.path.join(mask_dir, mask_d)
         img_path = os.path.join(data_dir, img_name)
 
         for i in range(1, 4):
@@ -113,7 +114,8 @@ def mian():
         os.makedirs(save_val_dir, exist_ok=True)
         case_PCI = df[df['CaseID'] == img_name.split('.')[0]]
 
-        mask_path = os.path.join(mask_dir, img_name)
+        mask_d = img_name.replace('_0001', '')
+        mask_path = os.path.join(mask_dir, mask_d)
         img_path = os.path.join(data_dir, img_name)
 
         for i in range(1, 4):
