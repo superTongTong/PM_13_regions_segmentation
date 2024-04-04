@@ -59,7 +59,7 @@ def get_data_list(data_dir, split='train'):
 def PCI_DataLoader(data_dir, batch_size=1, shuffle=True, split='train', spatial_size=(128, 128, 128), num_workers=2):
     imgs, labels = get_data_list(data_dir, split=split)
     data_files = [{"image": i, "label": l} for i, l in zip(imgs, labels)]
-    ds = CacheDataset(data=data_files, transform=pci_transform(spatial_size=spatial_size))
+    ds = CacheDataset(data=data_files, transform=pci_transform(spatial_size=spatial_size), progress=False)
     data_loader = DataLoader(ds, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
     return data_loader
 
