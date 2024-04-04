@@ -5,7 +5,7 @@ import torch
 import numpy as np
 import os
 import random
-from torch.optim.lr_scheduler import StepLR
+from torch.optim.lr_scheduler import StepLR, PolynomialLR
 import torch.optim as optim
 from dataloader import PCI_DataLoader
 from torch.utils.tensorboard import SummaryWriter
@@ -13,6 +13,8 @@ from monai.transforms import Compose, EnsureType, Activations, AsDiscrete
 from monai.data import decollate_batch
 from monai.metrics import ROCAUCMetric
 import time
+import matplotlib.pyplot as plt
+from plot_results import plot_metrics
 
 
 def seed_everything(seed):
@@ -25,16 +27,18 @@ def seed_everything(seed):
     torch.backends.cudnn.deterministic = True
 
 
-def train(epochs, val_interval, model, train_loader, val_loader, criterion, optimizer, post_label, post_pred, auc_metric):
+def train(epochs, val_interval, model, train_loader, val_loader, criterion, optimizer, schduler, post_label, post_pred, auc_metric):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     best_metric = -1
     best_metric_epoch = -1
-    epoch_loss_values = []
+    train_loss = []
+    val_loss = []
     # metric_values = []
-    # acc_values = []
+    acc_values = []
     for epoch in range(epochs):
         print("-" * 10)
         print(f"epoch {epoch + 1}/{epochs}")
+        print(f"Current learning rate: {np.round(optimizer.param_groups[0]['lr'], decimals=5)}")
         model.train()
         epoch_loss = 0
         step = 0
@@ -43,7 +47,7 @@ def train(epochs, val_interval, model, train_loader, val_loader, criterion, opti
         for batch_data in train_loader:
             step += 1
             data, label = batch_data["image"].to(device), batch_data["label"].to(device)
-            model.to(device)
+            # model.to(device)
 
             output = model(data.float())
             loss = criterion(output, label)
@@ -56,8 +60,10 @@ def train(epochs, val_interval, model, train_loader, val_loader, criterion, opti
             epoch_len = len(train_loader) // train_loader.batch_size
             print(f"{step}/{epoch_len}, train_loss: {loss.item():.4f}")
             writer.add_scalar("train_loss", loss.item(), epoch_len * epoch + step)
+
+        schduler.step()
         epoch_loss /= step
-        epoch_loss_values.append(epoch_loss)
+        train_loss.append(epoch_loss)
         print(f"epoch {epoch + 1} average loss: {epoch_loss:.4f}")
 
         if (epoch + 1) % val_interval == 0:
@@ -70,9 +76,11 @@ def train(epochs, val_interval, model, train_loader, val_loader, criterion, opti
                     val_images, val_labels = val_data["image"].to(device), val_data["label"].to(device)
                     y_pred = torch.cat([y_pred, model(val_images)], dim=0)
                     y = torch.cat([y, val_labels], dim=0)
-
+                val_l = criterion(y_pred, y)
+                val_loss.append(val_l.mean().item())
                 acc_value = torch.eq(y_pred.argmax(dim=1), y)
                 acc_metric = acc_value.sum().item() / len(acc_value)
+                acc_values.append(acc_metric)
                 # y_onehot = [post_label(i) for i in decollate_batch(y)]
                 # y_pred_act = [post_pred(i) for i in decollate_batch(y_pred)]
                 # # torch.tensor(y_pred_act, device="cpu")
@@ -97,6 +105,11 @@ def train(epochs, val_interval, model, train_loader, val_loader, criterion, opti
                     )
                 )
                 writer.add_scalar("val_accuracy", acc_metric, epoch + 1)
+        # plot and save train and val loss curve, accuracy curve
+        save_dir = "C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/plot/"
+        os.makedirs(save_dir, exist_ok=True)
+        plot_metrics(train_loss, val_loss, acc_values, save_path=save_dir)
+
         print(f"train completed, best_metric: {best_metric:.4f} at epoch: {best_metric_epoch}")
         writer.close()
 
@@ -107,9 +120,9 @@ def mian():
 
     batch_size = 2  # 64
     epochs = 10  # 10   #20 #10 #50 #20
-    val_interval = 2
-    lr = 3e-5
-    gamma = 0.7
+    val_interval = 1
+    lr = 3e-4 # 3e-5
+    gamma = 0.9
     seed = 42  # 42
     seed_everything(seed)
     # model = nets.ViT(
@@ -120,18 +133,28 @@ def mian():
         # classification=True
         # num_classes=4
     # )
+    #set model
     model = nets.resnet10(
         pretrained=False,
         n_input_channels=1,
-        widen_factor=2,
+        widen_factor=1,
         conv1_t_stride=2,
         num_classes=4,
     )
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # load pretrain model
+    pretrain = torch.load("C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/resnet_10.pth")
+    pretrain['state_dict'] = {k.replace("module.", ""): v for k, v in pretrain['state_dict'].items()}
+    model.to(device)
+    model.load_state_dict(pretrain['state_dict'], strict=False)
+    print("load pretrain model")
+
+    # prepare dataloader
     data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan/'
     train_loader = PCI_DataLoader(data_dir, batch_size=batch_size, shuffle=True,
-                                  split='train', spatial_size=(64, 64, 64), num_workers=2)
+                                  split='train', spatial_size=(16, 16, 16), num_workers=2)
     val_loader = PCI_DataLoader(data_dir, batch_size=1, shuffle=False,
-                                split='validation', spatial_size=(64, 64, 64), num_workers=2)
+                                split='validation', spatial_size=(16, 16, 16), num_workers=2)
 
     post_pred = Compose([EnsureType(), Activations(softmax=True)])
     post_label = Compose([EnsureType(), AsDiscrete(to_onehot=4, n_classes=4)])
@@ -140,10 +163,10 @@ def mian():
     # optimizer
     optimizer = optim.Adam(model.parameters(), lr=lr)
     # scheduler
-    scheduler = StepLR(optimizer, step_size=1, gamma=gamma)
+    scheduler = PolynomialLR(optimizer, total_iters=epochs, power=gamma)
     # metric
     auc_metric = ROCAUCMetric()
-    train(epochs, val_interval, model, train_loader, val_loader, criterion, optimizer, post_label, post_pred, auc_metric)
+    train(epochs, val_interval, model, train_loader, val_loader, criterion, optimizer, scheduler, post_label, post_pred, auc_metric)
 
 
 if __name__ == '__main__':
