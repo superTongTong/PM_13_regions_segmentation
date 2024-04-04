@@ -78,7 +78,7 @@ def mian():
     # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/images'
     # mask_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/masks'
     # save_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan'
-    # csv_path = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/PCI_3_regions.csv'
+    # csv_path = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/PCI_3_regions_new.csv'
     data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/raw_data/'
     mask_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/masks/'
     save_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan'
@@ -94,6 +94,7 @@ def mian():
                                               random_state=random_seed)
 
     for img_name in train_list:
+        print('start processing image:', img_name.split('.')[0])
         save_train_dir = os.path.join(save_dir, 'train')
         os.makedirs(save_train_dir, exist_ok=True)
         case_PCI = df[df['CaseID'] == img_name.split('.')[0]]
@@ -108,8 +109,11 @@ def mian():
             crop_img = extract_roi_based_mask(img_path, mask_path, i)
             name = img_name.split('.')[0]
             sitk.WriteImage(crop_img, f"{save_train_dir}/{name}_R{i}_{sc}.nii.gz")
+        print('finish processing image:', img_name.split('.')[0])
         # break
     for img_name in valid_list:
+        print('start processing image:', img_name.split('.')[0])
+
         save_val_dir = os.path.join(save_dir, 'validation')
         os.makedirs(save_val_dir, exist_ok=True)
         case_PCI = df[df['CaseID'] == img_name.split('.')[0]]
@@ -124,6 +128,8 @@ def mian():
             crop_img = extract_roi_based_mask(img_path, mask_path, i)
             name = img_name.split('.')[0]
             sitk.WriteImage(crop_img, f"{save_val_dir}/{name}_R{i}_{sc}.nii.gz")
+        print('finish processing image:', img_name.split('.')[0])
+
 
 if __name__ == "__main__":
     mian()
