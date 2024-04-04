@@ -24,7 +24,7 @@ def seed_everything(seed):
     torch.backends.cudnn.deterministic = True
 
 
-def train(epochs, val_interval, model, train_loader, val_loader, criterion, optimizer, schduler, post_label, post_pred, auc_metric, save_dir, device):
+def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterion, optimizer, schduler, post_label, post_pred, auc_metric, save_dir, device):
     # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     best_metric = -1
     best_metric_epoch = -1
@@ -168,7 +168,7 @@ def mian():
     scheduler = PolynomialLR(optimizer, total_iters=epochs, power=gamma)
     # metric
     auc_metric = ROCAUCMetric()
-    train(epochs, val_interval, model, train_loader, val_loader, criterion,
+    ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterion,
           optimizer, scheduler, post_label, post_pred, auc_metric, save_plot_dir, device)
 
 

@@ -23,7 +23,7 @@ def seed_everything(seed):
     torch.backends.cudnn.deterministic = True
 
 
-def train(epochs, val_interval, model, train_loader, val_loader, criterion, optimizer, schduler, post_label, post_pred, auc_metric, save_dir, device):
+def Vit_train(epochs, val_interval, model, train_loader, val_loader, criterion, optimizer, schduler, post_label, post_pred, auc_metric, save_dir, device):
     # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     best_metric = -1
     best_metric_epoch = -1
@@ -108,19 +108,19 @@ def train(epochs, val_interval, model, train_loader, val_loader, criterion, opti
 
 def mian():
     # specify all the directories
-    data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan/'
-    save_plot_dir = "C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/plot_ViT/"
-    # data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan/'
-    # save_plot_dir = "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/plot_v3_100epochs/"
+    # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan/'
+    # save_plot_dir = "C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/plot_ViT/"
+    data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan/'
+    save_plot_dir = "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/plot_ViT_100epochs/"
     # pretrain = torch.load(
     #     "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
 
     # set hyperparameters
-    batch_size = 2 #32 #64 out of memory
-    epochs = 10 #100
+    batch_size = 32 #32 #64 out of memory
+    epochs = 100 #100
     val_interval = 1
-    lr = 1e-6 # 3e-5
-    gamma = 0.9
+    lr = 1e-5 # 3e-5
+    gamma = 0.8
     seed = 42
     seed_everything(seed)
     model = nets.ViT(
@@ -149,7 +149,7 @@ def mian():
     scheduler = PolynomialLR(optimizer, total_iters=epochs, power=gamma)
     # metric
     auc_metric = ROCAUCMetric()
-    train(epochs, val_interval, model, train_loader, val_loader, criterion,
+    Vit_train(epochs, val_interval, model, train_loader, val_loader, criterion,
           optimizer, scheduler, post_label, post_pred, auc_metric, save_plot_dir, device)
 
 
