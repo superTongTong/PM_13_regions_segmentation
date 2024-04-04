@@ -128,12 +128,12 @@ def mian():
     seed = 42  # 42
     seed_everything(seed)
     # model = nets.ViT(
-        # in_channels=1,
-        # img_size=(96,96,96),
-        # patch_size=(16,16,16),
-        # pos_embed='conv',
-        # classification=True
-        # num_classes=4
+    #     in_channels=1,
+    #     img_size=(96,96,96),
+    #     patch_size=(16,16,16),
+    #     pos_embed='conv',
+    #     classification=True,
+    #     num_classes=4
     # )
     #set model
     model = nets.resnet50(
