@@ -35,7 +35,7 @@ def train(epochs, val_interval, model, train_loader, val_loader, criterion, opti
     for epoch in range(epochs):
         print("-" * 10)
         print(f"epoch {epoch + 1}/{epochs}")
-        print(f"Current learning rate: {np.round(optimizer.param_groups[0]['lr'], decimals=5)}")
+        print(f"Current learning rate: {np.round(optimizer.param_groups[0]['lr'], decimals=10)}")
         model.train()
         epoch_loss = 0
         step = 0
@@ -115,13 +115,13 @@ def mian():
     # pretrain = torch.load(
     #     "C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
     data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan/'
-    save_plot_dir = "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/plot_v2_20epochs/"
+    save_plot_dir = "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/plot_v3_100epochs/"
     pretrain = torch.load(
         "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
 
     # set hyperparameters
-    batch_size = 32  # 64
-    epochs = 20
+    batch_size = 64  # 64
+    epochs = 100
     val_interval = 1
     lr = 1e-6 # 3e-5
     gamma = 1
