@@ -94,10 +94,12 @@ def mian():
                                               random_state=random_seed)
 
     for img_name in train_list:
+        print('-'*10)
         print('start processing image:', img_name.split('.')[0])
         save_train_dir = os.path.join(save_dir, 'train')
         os.makedirs(save_train_dir, exist_ok=True)
         case_PCI = df[df['CaseID'] == img_name.split('.')[0]]
+        print('PCI_info:', case_PCI)
 
         mask_d = img_name.replace('_0001', '')
         mask_path = os.path.join(mask_dir, mask_d)
@@ -105,6 +107,7 @@ def mian():
 
         for i in range(1, 4):
             region_score = case_PCI[f'R{i}'].values
+            print('region score:', region_score)
             sc = region_score[0]
             crop_img = extract_roi_based_mask(img_path, mask_path, i)
             name = img_name.split('.')[0]
