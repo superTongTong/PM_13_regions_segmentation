@@ -120,12 +120,12 @@ def mian():
         "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
 
     # set hyperparameters
-    batch_size = 2  # 64
-    epochs = 2  # 10   #20 #10 #50 #20
+    batch_size = 32  # 64
+    epochs = 100
     val_interval = 1
     lr = 1e-5 # 3e-5
     gamma = 0.9
-    seed = 42  # 42
+    seed = 42
     seed_everything(seed)
     # model = nets.ViT(
     #     in_channels=1,
