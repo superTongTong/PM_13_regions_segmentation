@@ -1,12 +1,7 @@
-from torchvision import transforms
 import numpy as np
 import time
-import glob
-import torch
 import os
-import torch.nn.functional as F
 import matplotlib.pyplot as plt
-from PCI_dataset import PCI_Dataset
 from monai.data import CacheDataset, DataLoader
 from monai.transforms import (
     Compose,
@@ -15,8 +10,7 @@ from monai.transforms import (
     Orientationd,
     Resized,
     ToTensord,
-    ScaleIntensityRanged,
-    EnsureTyped
+    ScaleIntensityRanged
 )
 
 

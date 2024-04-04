@@ -1,11 +1,9 @@
 import torch
-import SimpleITK as sitk
 from torch.utils import data
 import os
 import torch.nn.functional as F
 import numpy as np
 import matplotlib.pyplot as plt
-from monai.data import CacheDataset
 
 class PCI_Dataset(data.Dataset):
     def __init__(self,
