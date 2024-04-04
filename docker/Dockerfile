@@ -19,7 +19,7 @@ RUN pip3 install --upgrade pip
 RUN pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 RUN pip3 install monai numpy nibabel wandb timm pytz python-dateutil SimpleITK pandas tqdm p_tqdm
 RUN pip3 install psutil scipy joblib batchgenerators argparse tifffile scikit-image matplotlib
-RUN pip3 install requests slicerio dicom2nifti seaborn scikit-learn dynamic_network_architectures acvl_utils
+RUN pip3 install requests slicerio dicom2nifti seaborn scikit-learn dynamic_network_architectures acvl_utils pyarrow
 
 
 WORKDIR /app/script

@@ -24,12 +24,12 @@ def seed_everything(seed):
     torch.backends.cudnn.deterministic = True
 
 
-def train(epochs, val_interval, model, train_loader, val_loader, criterion, optimizer, schduler, post_label, post_pred, auc_metric, save_dir):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+def train(epochs, val_interval, model, train_loader, val_loader, criterion, optimizer, schduler, post_label, post_pred, auc_metric, save_dir, device):
+    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     best_metric = -1
     best_metric_epoch = -1
-    train_loss = []
-    val_loss = []
+    train_loss_list = []
+    val_loss_list = []
     # metric_values = []
     acc_values = []
     for epoch in range(epochs):
@@ -58,7 +58,7 @@ def train(epochs, val_interval, model, train_loader, val_loader, criterion, opti
 
         schduler.step()
         epoch_loss /= step
-        train_loss.append(epoch_loss)
+        train_loss_list.append(epoch_loss)
         print(f"epoch {epoch + 1} average loss: {epoch_loss:.4f}")
 
         if (epoch + 1) % val_interval == 0:
@@ -72,7 +72,8 @@ def train(epochs, val_interval, model, train_loader, val_loader, criterion, opti
                     y_pred = torch.cat([y_pred, model(val_images)], dim=0)
                     y = torch.cat([y, val_labels], dim=0)
                 val_l = criterion(y_pred, y)
-                val_loss.append(val_l.mean().item())
+                val_loss = val_l.item()
+                val_loss_list.append(val_loss)
                 print(f"epoch {epoch + 1} validation loss: {val_loss:.4f}")
                 acc_value = torch.eq(y_pred.argmax(dim=1), y)
                 acc_metric = acc_value.sum().item() / len(acc_value)
@@ -102,7 +103,7 @@ def train(epochs, val_interval, model, train_loader, val_loader, criterion, opti
                 )
         # plot and save train and val loss curve, accuracy curve
         os.makedirs(save_dir, exist_ok=True)
-        plot_metrics(train_loss, val_loss, acc_values, save_path=save_dir)
+        plot_metrics(train_loss_list, val_loss_list, acc_values, save_path=save_dir)
 
         print(f"train completed, best_metric: {best_metric:.4f} at epoch: {best_metric_epoch}")
 
@@ -112,7 +113,7 @@ def mian():
     # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan/'
     # save_plot_dir = "C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/plot/"
     # pretrain = torch.load(
-    #     "C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/resnet_10.pth")
+    #     "C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
     data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan/'
     save_plot_dir = "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/plot/"
     pretrain = torch.load(
@@ -120,7 +121,7 @@ def mian():
 
     # set hyperparameters
     batch_size = 2  # 64
-    epochs = 10  # 10   #20 #10 #50 #20
+    epochs = 2  # 10   #20 #10 #50 #20
     val_interval = 1
     lr = 1e-5 # 3e-5
     gamma = 0.9
@@ -168,7 +169,7 @@ def mian():
     # metric
     auc_metric = ROCAUCMetric()
     train(epochs, val_interval, model, train_loader, val_loader, criterion,
-          optimizer, scheduler, post_label, post_pred, auc_metric, save_plot_dir)
+          optimizer, scheduler, post_label, post_pred, auc_metric, save_plot_dir, device)
 
 
 if __name__ == '__main__':
