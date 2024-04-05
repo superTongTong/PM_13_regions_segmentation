@@ -119,8 +119,8 @@ def mian():
     batch_size = 32 #32 #64 out of memory
     epochs = 100 #100
     val_interval = 1
-    lr = 1e-5 # 3e-5
-    gamma = 0.8
+    lr = 1e-6 # 3e-5
+    gamma = 1.2
     seed = 42
     seed_everything(seed)
     model = nets.ViT(
