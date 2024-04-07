@@ -660,7 +660,7 @@ class nnUNetTrainerRS(nnUNetTrainer):
                 border_mode_seg="constant",
                 border_cval_seg=-1,
                 order_seg=order_resampling_seg,
-                random_crop=False,
+                random_crop=True,
                 p_el_per_sample=0.2,
                 p_scale_per_sample=0.2,
                 p_rot_per_sample=0.4,
@@ -731,7 +731,7 @@ class nnUNetTrainerRotation_200epochs(nnUNetTrainerRotation):
         super().__init__(plans, configuration, fold, dataset_json, unpack_dataset, device)
         self.num_epochs = 200
 
-class nnUNetTrainerRS_200epochs(nnUNetTrainerRS):
+class nnUNetTrainerRSC_200epochs(nnUNetTrainerRS):
     def __init__(self, plans: dict, configuration: str, fold: int, dataset_json: dict, unpack_dataset: bool = True,
                  device: torch.device = torch.device('cuda')):
         super().__init__(plans, configuration, fold, dataset_json, unpack_dataset, device)
