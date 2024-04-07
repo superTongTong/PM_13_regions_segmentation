@@ -2,7 +2,10 @@ import numpy as np
 import time
 import os
 import matplotlib.pyplot as plt
+import torch
 from monai.data import CacheDataset, DataLoader
+from torch.utils.data.sampler import WeightedRandomSampler
+from collections import Counter
 from monai.transforms import (
     Compose,
     LoadImaged,
@@ -18,11 +21,12 @@ def pci_transform(spatial_size=(128, 128, 128)):
     data_transform = Compose([
         LoadImaged(keys=["image"]),
         EnsureChannelFirstd(keys=["image"]),
-        # CropForegroundd(keys=all_keys, source_key=image_keys[0]),
         Orientationd(keys=["image"], axcodes="RAS"),
         Resized(keys=["image"], spatial_size=spatial_size),
         # HU windowing for abdomen CT images: [-200, 300]
         ScaleIntensityRanged(keys=["image"], a_min=-200, a_max=300, b_min=0.0, b_max=1.0, clip=True),
+        # CropForegroundd(keys=all_keys, source_key=image_keys[0]),
+        # some DA
         # EnsureTyped(keys=["image"]),
         ToTensord(keys=["image"]),
     ])
@@ -56,12 +60,31 @@ def get_data_list(data_dir, split='train'):
     return images, labels
 
 
-def PCI_DataLoader(data_dir, batch_size=1, shuffle=True, split='train', spatial_size=(128, 128, 128), num_workers=2):
+def PCI_DataLoader(data_dir, batch_size=1, shuffle=True, split='train', spatial_size=(128, 128, 128), num_workers=2, use_sampler=True):
+    class_counts = []
     imgs, labels = get_data_list(data_dir, split=split)
     data_files = [{"image": i, "label": l} for i, l in zip(imgs, labels)]
-    ds = CacheDataset(data=data_files, transform=pci_transform(spatial_size=spatial_size), progress=True)
-    data_loader = DataLoader(ds, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-    return data_loader
+    if not use_sampler:
+        ds = CacheDataset(data=data_files, transform=pci_transform(spatial_size=spatial_size), progress=True)
+        data_loader = DataLoader(ds, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+        return data_loader
+    else:
+        ###############
+        # Count the occurrences of each number
+        number_counts = Counter(labels)
+        for num, count in sorted(number_counts.items()):
+            class_counts.append(count)
+        # class_counts = [9.0, 1.0]
+        num_samples = sum(class_counts)
+
+        # prepare the weighted sampler
+        class_weights = [num_samples / class_counts[i] for i in range(len(class_counts))]
+        weights = [class_weights[labels[i]] for i in range(int(num_samples))]
+        sampler = WeightedRandomSampler(torch.DoubleTensor(weights), int(num_samples))
+        #############
+        ds = CacheDataset(data=data_files, transform=pci_transform(spatial_size=spatial_size), progress=True)
+        data_loader = DataLoader(ds, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, sampler=sampler)
+        return data_loader
 
 def main():
     data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan/'

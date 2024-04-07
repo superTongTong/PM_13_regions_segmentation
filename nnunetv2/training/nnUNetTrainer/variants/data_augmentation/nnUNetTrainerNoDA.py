@@ -40,8 +40,8 @@ class nnUNetTrainerNoDA(nnUNetTrainer):
         return rotation_for_DA, do_dummy_2d_data_aug, initial_patch_size, mirror_axes
 
 
-class nnUNetTrainerNoDA_500epochs(nnUNetTrainerNoDA):
+class nnUNetTrainerNoDA_200epochs(nnUNetTrainerNoDA):
     def __init__(self, plans: dict, configuration: str, fold: int, dataset_json: dict, unpack_dataset: bool = True,
                  device: torch.device = torch.device('cuda')):
         super().__init__(plans, configuration, fold, dataset_json, unpack_dataset, device)
-        self.num_epochs = 500
+        self.num_epochs = 200
