@@ -431,7 +431,6 @@ class nnUNetTrainerRotation(nnUNetTrainer):
         dim = len(patch_size)
 
         if dim == 3:
-            # todo this is not ideal. We could also have patch_size (64, 16, 128) in which case a full 180deg 2d rot would be bad
             # order of the axes is determined by spacing, not image size
             do_dummy_2d_data_aug = (max(patch_size) / patch_size[0]) > ANISO_THRESHOLD
             if do_dummy_2d_data_aug:
@@ -451,8 +450,6 @@ class nnUNetTrainerRotation(nnUNetTrainer):
         else:
             raise RuntimeError()
 
-        # todo this function is stupid. It doesn't even use the correct scale range (we keep things as they were in the
-        #  old nnunet for now)
         initial_patch_size = get_patch_size(patch_size[-dim:],
                                             *rotation_for_DA.values(),
                                             (0.7, 1.43))
@@ -582,7 +579,6 @@ class nnUNetTrainerRS(nnUNetTrainer):
         dim = len(patch_size)
 
         if dim == 3:
-            # todo this is not ideal. We could also have patch_size (64, 16, 128) in which case a full 180deg 2d rot would be bad
             # order of the axes is determined by spacing, not image size
             do_dummy_2d_data_aug = (max(patch_size) / patch_size[0]) > ANISO_THRESHOLD
             if do_dummy_2d_data_aug:
@@ -602,8 +598,6 @@ class nnUNetTrainerRS(nnUNetTrainer):
         else:
             raise RuntimeError()
 
-        # todo this function is stupid. It doesn't even use the correct scale range (we keep things as they were in the
-        #  old nnunet for now)
         initial_patch_size = get_patch_size(patch_size[-dim:],
                                             *rotation_for_DA.values(),
                                             (0.7, 1.43))
@@ -647,12 +641,12 @@ class nnUNetTrainerRS(nnUNetTrainer):
                 patch_size_spatial,
                 patch_center_dist_from_border=None,
                 do_elastic_deform=False,
-                do_rotation=True,
+                do_rotation=False,
                 angle_x=rotation_for_DA['x'],
                 angle_y=rotation_for_DA['y'],
                 angle_z=rotation_for_DA['z'],
                 p_rot_per_axis=0.5,
-                do_scale=True,
+                do_scale=False,
                 scale=(0.7, 1.43),
                 border_mode_data="constant",
                 border_cval_data=0,
@@ -660,7 +654,7 @@ class nnUNetTrainerRS(nnUNetTrainer):
                 border_mode_seg="constant",
                 border_cval_seg=-1,
                 order_seg=order_resampling_seg,
-                random_crop=True,
+                random_crop=False,
                 p_el_per_sample=0.2,
                 p_scale_per_sample=0.2,
                 p_rot_per_sample=0.4,
@@ -682,6 +676,61 @@ class nnUNetTrainerRS(nnUNetTrainer):
             tr_transforms.append(
                 TransposeAxesTransform(valid_axes, data_key='data', label_key='seg', p_per_sample=0.5)
             )
+
+        tr_transforms.append(OneOfTransform([  # extra
+            MedianFilterTransform(
+                (2, 8),
+                same_for_each_channel=False,
+                p_per_sample=0.2,
+                p_per_channel=0.5
+            ),
+            GaussianBlurTransform((0.3, 1.5),
+                                  different_sigma_per_channel=True,
+                                  p_per_sample=0.2,
+                                  p_per_channel=0.5)
+        ]))
+
+        # tr_transforms.append(GaussianNoiseTransform(p_per_sample=0.1))
+        #
+        # tr_transforms.append(BrightnessTransform(0,
+        #                                          0.5,
+        #                                          per_channel=True,
+        #                                          p_per_sample=0.1,
+        #                                          p_per_channel=0.5
+        #                                          )
+        #                      )
+        #
+        # tr_transforms.append(OneOfTransform(  # extensive
+        #     [
+        #         ContrastAugmentationTransform(
+        #             contrast_range=(0.5, 2),
+        #             preserve_range=True,
+        #             per_channel=True,
+        #             data_key='data',
+        #             p_per_sample=0.2,
+        #             p_per_channel=0.5
+        #         ),
+        #         ContrastAugmentationTransform(
+        #             contrast_range=(0.5, 2),
+        #             preserve_range=False,
+        #             per_channel=True,
+        #             data_key='data',
+        #             p_per_sample=0.2,
+        #             p_per_channel=0.5
+        #         ),
+        #     ]
+        # ))
+        #
+        # tr_transforms.append(
+        #     SimulateLowResolutionTransform(zoom_range=(0.25, 1),  # different zoom_range=(0.5, 1), p_per_sample=0.25
+        #                                    per_channel=True,
+        #                                    p_per_channel=0.5,
+        #                                    order_downsample=0,
+        #                                    order_upsample=3,
+        #                                    p_per_sample=0.15,
+        #                                    ignore_axes=ignore_axes
+        #                                    )
+        # )
 
         if use_mask_for_norm is not None and any(use_mask_for_norm):
             tr_transforms.append(MaskTransform([i for i in range(len(use_mask_for_norm)) if use_mask_for_norm[i]],
@@ -731,7 +780,7 @@ class nnUNetTrainerRotation_200epochs(nnUNetTrainerRotation):
         super().__init__(plans, configuration, fold, dataset_json, unpack_dataset, device)
         self.num_epochs = 200
 
-class nnUNetTrainerRSC_200epochs(nnUNetTrainerRS):
+class nnUNetTrainerGaussianBlur_200epochs(nnUNetTrainerRS):
     def __init__(self, plans: dict, configuration: str, fold: int, dataset_json: dict, unpack_dataset: bool = True,
                  device: torch.device = torch.device('cuda')):
         super().__init__(plans, configuration, fold, dataset_json, unpack_dataset, device)
