@@ -31,8 +31,11 @@ def crop_image(img_array, mask_array):
 
 def extract_roi_based_mask(ct_image_path, seg_mask_path, idx):
     # Load the CT image and segmentation mask
-    ct_image = sitk.ReadImage(ct_image_path, sitk.sitkInt32)
+    ct_image1 = sitk.ReadImage(ct_image_path, sitk.sitkInt32)
     seg_mask = sitk.ReadImage(seg_mask_path, sitk.sitkInt32)
+
+    # scale the HU values of ct_img, HU windowing for abdomen CT images: [-200, 300] to [0, 1]
+    clip_img = sitk.Clamp(ct_image1, lowerBound=-200, upperBound=300)
 
     # Find bounding box of segmentation mask
     region = sitk.LabelShapeStatisticsImageFilter()
@@ -41,15 +44,19 @@ def extract_roi_based_mask(ct_image_path, seg_mask_path, idx):
     bounding_box = region.GetBoundingBox(idx)
 
     # Crop the CT image using the bounding box
-    ct_image_cropped = sitk.RegionOfInterest(ct_image, bounding_box[int(len(bounding_box)/2):], bounding_box[0:int(len(bounding_box)/2)])
+    ct_image_cropped = sitk.RegionOfInterest(clip_img, bounding_box[int(len(bounding_box)/2):], bounding_box[0:int(len(bounding_box)/2)])
     ct_mask_cropped = sitk.RegionOfInterest(seg_mask, bounding_box[int(len(bounding_box)/2):], bounding_box[0:int(len(bounding_box)/2)])
 
     # Convert segmentation mask to NumPy array
+
     seg_mask_arr = sitk.GetArrayFromImage(ct_mask_cropped)
+    seg = np.zeros_like(seg_mask_arr)
+    seg[seg_mask_arr==idx] = 1
 
     # Apply binary mask to CT image
     ct_image_arr = sitk.GetArrayFromImage(ct_image_cropped)
-    roi_ct_image_arr = ct_image_arr * seg_mask_arr
+    ct_image_arr = (ct_image_arr+200)/500
+    roi_ct_image_arr = ct_image_arr * seg
 
     # Create SimpleITK image from the extracted ROI array
     roi_ct_image = sitk.GetImageFromArray(roi_ct_image_arr)
@@ -77,11 +84,11 @@ def crop_based_mask(ct_image_path, seg_mask_path, idx):
 def mian():
     # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/images'
     # mask_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/masks'
-    # save_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan'
+    # save_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test'
     # csv_path = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/PCI_3_regions_new.csv'
     data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/raw_data/'
     mask_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/masks/'
-    save_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan'
+    save_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v2'
     csv_path = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/PCI_3_regions_new.csv'
     random_seed = 42
     df = pd.read_csv(csv_path)
@@ -103,13 +110,13 @@ def mian():
             continue
         else:
             case_PCI = df[df['CaseID'] == img_name.split('.')[0]]
-            print('PCI_info:', case_PCI)
+            # print('PCI_info:', case_PCI)
             mask_d = img_name.replace('_0001', '')
             mask_path = os.path.join(mask_dir, mask_d)
             img_path = os.path.join(data_dir, img_name)
             for i in range(1, 4):
                 region_score = case_PCI[f'R{i}'].values
-                print('region score:', region_score)
+                # print('region score:', region_score)
                 sc = region_score[0]
                 crop_img = extract_roi_based_mask(img_path, mask_path, i)
                 name = img_name.split('.')[0]
@@ -141,7 +148,7 @@ def mian():
                 name = img_name.split('.')[0]
                 sitk.WriteImage(crop_img, f"{save_val_dir}/{name}_R{i}_{sc}.nii.gz")
             print('finish processing image:', img_name.split('.')[0])
-
+        # break
 
 if __name__ == "__main__":
     mian()
