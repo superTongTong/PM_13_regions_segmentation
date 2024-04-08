@@ -23,9 +23,7 @@ def pci_transform(spatial_size=(128, 128, 128)):
         EnsureChannelFirstd(keys=["image"]),
         Orientationd(keys=["image"], axcodes="RAS"),
         Resized(keys=["image"], spatial_size=spatial_size),
-        # HU windowing for abdomen CT images: [-200, 300]
-        ScaleIntensityRanged(keys=["image"], a_min=-200, a_max=300, b_min=0.0, b_max=1.0, clip=True),
-        # CropForegroundd(keys=all_keys, source_key=image_keys[0]),
+        # HU windowing for abdomen CT images: [-200, 300] to [0, 1], already done in the preprocessing
         # some DA
         # EnsureTyped(keys=["image"]),
         ToTensord(keys=["image"]),
