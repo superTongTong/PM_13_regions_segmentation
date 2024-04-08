@@ -455,7 +455,7 @@ class nnUNetTrainerRS(nnUNetTrainerDA5):
                 patch_size_spatial,
                 patch_center_dist_from_border=None,
                 do_elastic_deform=False,
-                do_rotation=True,
+                do_rotation=True,  # True
                 angle_x=rotation_for_DA['x'],
                 angle_y=rotation_for_DA['y'],
                 angle_z=rotation_for_DA['z'],
@@ -503,7 +503,7 @@ class nnUNetTrainerRS(nnUNetTrainerDA5):
         #                           p_per_sample=0.2,
         #                           p_per_channel=0.5)
         # ]))
-
+        #
         # tr_transforms.append(GaussianNoiseTransform(p_per_sample=0.1))
         #
         # tr_transforms.append(BrightnessTransform(0,
@@ -545,6 +545,58 @@ class nnUNetTrainerRS(nnUNetTrainerDA5):
         #                                    ignore_axes=ignore_axes
         #                                    )
         # )
+
+        tr_transforms.append(
+            GammaTransform((0.7, 1.5), invert_image=True, per_channel=True, retain_stats=True, p_per_sample=0.1))
+        tr_transforms.append(
+            GammaTransform((0.7, 1.5), invert_image=True, per_channel=True, retain_stats=True,
+                           p_per_sample=0.1))  # diff p_per_sample=0.3
+
+        if mirror_axes is not None and len(mirror_axes) > 0:
+            tr_transforms.append(MirrorTransform(mirror_axes))
+
+        # extra noise transformer
+        tr_transforms.append(
+            BlankRectangleTransform([[max(1, p // 10), p // 3] for p in patch_size],
+                                    rectangle_value=np.mean,
+                                    num_rectangles=(1, 5),
+                                    force_square=False,
+                                    p_per_sample=0.4,
+                                    p_per_channel=0.5
+                                    )
+        )
+
+        tr_transforms.append(
+            BrightnessGradientAdditiveTransform(
+                _brightnessadditive_localgamma_transform_scale,
+                (-0.5, 1.5),
+                max_strength=_brightness_gradient_additive_max_strength,
+                mean_centered=False,
+                same_for_all_channels=False,
+                p_per_sample=0.3,
+                p_per_channel=0.5
+            )
+        )
+
+        tr_transforms.append(
+            LocalGammaTransform(
+                _brightnessadditive_localgamma_transform_scale,
+                (-0.5, 1.5),
+                _local_gamma_gamma,
+                same_for_all_channels=False,
+                p_per_sample=0.3,
+                p_per_channel=0.5
+            )
+        )
+
+        tr_transforms.append(
+            SharpeningTransform(
+                strength=(0.1, 1),
+                same_for_each_channel=False,
+                p_per_sample=0.2,
+                p_per_channel=0.5
+            )
+        )
 
         if use_mask_for_norm is not None and any(use_mask_for_norm):
             tr_transforms.append(MaskTransform([i for i in range(len(use_mask_for_norm)) if use_mask_for_norm[i]],
