@@ -422,45 +422,7 @@ class nnUNetTrainerDA5_500epochs(nnUNetTrainerDA5):
         super().__init__(plans, configuration, fold, dataset_json, unpack_dataset, device)
         self.num_epochs = 500
 
-class nnUNetTrainerRotation(nnUNetTrainer):
-    def configure_rotation_dummyDA_mirroring_and_inital_patch_size(self):
-        """
-        This function is stupid and certainly one of the weakest spots of this implementation. Not entirely sure how we can fix it.
-        """
-        patch_size = self.configuration_manager.patch_size
-        dim = len(patch_size)
-
-        if dim == 3:
-            # order of the axes is determined by spacing, not image size
-            do_dummy_2d_data_aug = (max(patch_size) / patch_size[0]) > ANISO_THRESHOLD
-            if do_dummy_2d_data_aug:
-                # why do we rotate 180 deg here all the time? We should also restrict it
-                rotation_for_DA = {
-                    'x': (-180. / 360 * 2. * np.pi, 180. / 360 * 2. * np.pi),
-                    'y': (0, 0),
-                    'z': (0, 0)
-                }
-            else:
-                rotation_for_DA = {
-                    'x': (-30. / 360 * 2. * np.pi, 30. / 360 * 2. * np.pi),# rotation alone x axis +- 30 degree -Yao
-                    'y': (-30. / 360 * 2. * np.pi, 30. / 360 * 2. * np.pi),
-                    'z': (-30. / 360 * 2. * np.pi, 30. / 360 * 2. * np.pi),
-                }
-            mirror_axes = (0, 1, 2)
-        else:
-            raise RuntimeError()
-
-        initial_patch_size = get_patch_size(patch_size[-dim:],
-                                            *rotation_for_DA.values(),
-                                            (0.7, 1.43))
-        if do_dummy_2d_data_aug:
-            initial_patch_size[0] = patch_size[0]
-
-        self.print_to_log_file(f'do_dummy_2d_data_aug: {do_dummy_2d_data_aug}')
-        self.inference_allowed_mirroring_axes = mirror_axes
-
-        return rotation_for_DA, do_dummy_2d_data_aug, initial_patch_size, mirror_axes
-
+class nnUNetTrainerRS(nnUNetTrainerDA5):
     @staticmethod
     def get_training_transforms(patch_size: Union[np.ndarray, Tuple[int]],
                                 rotation_for_DA: dict,
@@ -529,166 +491,18 @@ class nnUNetTrainerRotation(nnUNetTrainer):
                 TransposeAxesTransform(valid_axes, data_key='data', label_key='seg', p_per_sample=0.5)
             )
 
-        if use_mask_for_norm is not None and any(use_mask_for_norm):
-            tr_transforms.append(MaskTransform([i for i in range(len(use_mask_for_norm)) if use_mask_for_norm[i]],
-                                               mask_idx_in_seg=0, set_outside_to=0))
-
-        tr_transforms.append(RemoveLabelTransform(-1, 0))
-
-        if is_cascaded:
-            if ignore_label is not None:
-                raise NotImplementedError('ignore label not yet supported in cascade')
-            assert foreground_labels is not None, 'We need all_labels for cascade augmentations'
-            use_labels = [i for i in foreground_labels if i != 0]
-            tr_transforms.append(MoveSegAsOneHotToData(1, use_labels, 'seg', 'data'))
-            tr_transforms.append(ApplyRandomBinaryOperatorTransform(
-                channel_idx=list(range(-len(use_labels), 0)),
-                p_per_sample=0.4,
-                key="data",
-                strel_size=(1, 8),
-                p_per_label=1))
-            tr_transforms.append(
-                RemoveRandomConnectedComponentFromOneHotEncodingTransform(
-                    channel_idx=list(range(-len(use_labels), 0)),
-                    key="data",
-                    p_per_sample=0.2,
-                    fill_with_other_class_p=0,
-                    dont_do_if_covers_more_than_x_percent=0.15))
-
-        tr_transforms.append(RenameTransform('seg', 'target', True))
-
-        if regions is not None:
-            # the ignore label must also be converted
-            tr_transforms.append(ConvertSegmentationToRegionsTransform(list(regions) + [ignore_label]
-                                                                       if ignore_label is not None else regions,
-                                                                       'target', 'target'))
-
-        if deep_supervision_scales is not None:
-            tr_transforms.append(DownsampleSegForDSTransform2(deep_supervision_scales, 0, input_key='target',
-                                                              output_key='target'))
-        tr_transforms.append(NumpyToTensor(['data', 'target'], 'float'))
-        tr_transforms = Compose(tr_transforms)
-        return tr_transforms
-
-class nnUNetTrainerRS(nnUNetTrainer):
-    def configure_rotation_dummyDA_mirroring_and_inital_patch_size(self):
-        """
-        This function is stupid and certainly one of the weakest spots of this implementation. Not entirely sure how we can fix it.
-        """
-        patch_size = self.configuration_manager.patch_size
-        dim = len(patch_size)
-
-        if dim == 3:
-            # order of the axes is determined by spacing, not image size
-            do_dummy_2d_data_aug = (max(patch_size) / patch_size[0]) > ANISO_THRESHOLD
-            if do_dummy_2d_data_aug:
-                # why do we rotate 180 deg here all the time? We should also restrict it
-                rotation_for_DA = {
-                    'x': (-180. / 360 * 2. * np.pi, 180. / 360 * 2. * np.pi),
-                    'y': (0, 0),
-                    'z': (0, 0)
-                }
-            else:
-                rotation_for_DA = {
-                    'x': (-30. / 360 * 2. * np.pi, 30. / 360 * 2. * np.pi),# rotation alone x axis +- 30 degree -Yao
-                    'y': (-30. / 360 * 2. * np.pi, 30. / 360 * 2. * np.pi),
-                    'z': (-30. / 360 * 2. * np.pi, 30. / 360 * 2. * np.pi),
-                }
-            mirror_axes = (0, 1, 2)
-        else:
-            raise RuntimeError()
-
-        initial_patch_size = get_patch_size(patch_size[-dim:],
-                                            *rotation_for_DA.values(),
-                                            (0.7, 1.43))
-        if do_dummy_2d_data_aug:
-            initial_patch_size[0] = patch_size[0]
-
-        self.print_to_log_file(f'do_dummy_2d_data_aug: {do_dummy_2d_data_aug}')
-        self.inference_allowed_mirroring_axes = mirror_axes
-
-        return rotation_for_DA, do_dummy_2d_data_aug, initial_patch_size, mirror_axes
-
-    @staticmethod
-    def get_training_transforms(patch_size: Union[np.ndarray, Tuple[int]],
-                                rotation_for_DA: dict,
-                                deep_supervision_scales: Union[List, Tuple, None],
-                                mirror_axes: Tuple[int, ...],
-                                do_dummy_2d_data_aug: bool,
-                                order_resampling_data: int = 3,
-                                order_resampling_seg: int = 1,
-                                border_val_seg: int = -1,
-                                use_mask_for_norm: List[bool] = None,
-                                is_cascaded: bool = False,
-                                foreground_labels: Union[Tuple[int, ...], List[int]] = None,
-                                regions: List[Union[List[int], Tuple[int, ...], int]] = None,
-                                ignore_label: int = None) -> AbstractTransform:
-        matching_axes = np.array([sum([i == j for j in patch_size]) for i in patch_size])
-        valid_axes = list(np.where(matching_axes == np.max(matching_axes))[0])
-
-        tr_transforms = []
-
-        if do_dummy_2d_data_aug:
-            ignore_axes = (0,)
-            tr_transforms.append(Convert3DTo2DTransform())
-            patch_size_spatial = patch_size[1:]
-        else:
-            patch_size_spatial = patch_size
-            ignore_axes = None
-
-        tr_transforms.append(
-            SpatialTransform(
-                patch_size_spatial,
-                patch_center_dist_from_border=None,
-                do_elastic_deform=False,
-                do_rotation=False,
-                angle_x=rotation_for_DA['x'],
-                angle_y=rotation_for_DA['y'],
-                angle_z=rotation_for_DA['z'],
-                p_rot_per_axis=0.5,
-                do_scale=False,
-                scale=(0.7, 1.43),
-                border_mode_data="constant",
-                border_cval_data=0,
-                order_data=order_resampling_data,
-                border_mode_seg="constant",
-                border_cval_seg=-1,
-                order_seg=order_resampling_seg,
-                random_crop=False,
-                p_el_per_sample=0.2,
-                p_scale_per_sample=0.2,
-                p_rot_per_sample=0.4,
-                independent_scale_for_each_axis=True,
-            )
-        )
-
-        if do_dummy_2d_data_aug:
-            tr_transforms.append(Convert2DTo3DTransform())
-
-        if np.any(matching_axes > 1):
-            tr_transforms.append(
-                Rot90Transform(
-                    (0, 1, 2, 3), axes=valid_axes, data_key='data', label_key='seg', p_per_sample=0.5
-                ),
-            )
-
-        if np.any(matching_axes > 1):
-            tr_transforms.append(
-                TransposeAxesTransform(valid_axes, data_key='data', label_key='seg', p_per_sample=0.5)
-            )
-
-        tr_transforms.append(OneOfTransform([  # extra
-            MedianFilterTransform(
-                (2, 8),
-                same_for_each_channel=False,
-                p_per_sample=0.2,
-                p_per_channel=0.5
-            ),
-            GaussianBlurTransform((0.3, 1.5),
-                                  different_sigma_per_channel=True,
-                                  p_per_sample=0.2,
-                                  p_per_channel=0.5)
-        ]))
+        # tr_transforms.append(OneOfTransform([  # extra
+        #     MedianFilterTransform(
+        #         (2, 8),
+        #         same_for_each_channel=False,
+        #         p_per_sample=0.2,
+        #         p_per_channel=0.5
+        #     ),
+        #     GaussianBlurTransform((0.3, 1.5),
+        #                           different_sigma_per_channel=True,
+        #                           p_per_sample=0.2,
+        #                           p_per_channel=0.5)
+        # ]))
 
         # tr_transforms.append(GaussianNoiseTransform(p_per_sample=0.1))
         #
@@ -774,20 +588,8 @@ class nnUNetTrainerRS(nnUNetTrainer):
         return tr_transforms
 
 
-class nnUNetTrainerRotation_200epochs(nnUNetTrainerRotation):
+class nnUNetTrainerR_200epochs(nnUNetTrainerRS):
     def __init__(self, plans: dict, configuration: str, fold: int, dataset_json: dict, unpack_dataset: bool = True,
                  device: torch.device = torch.device('cuda')):
         super().__init__(plans, configuration, fold, dataset_json, unpack_dataset, device)
         self.num_epochs = 200
-
-class nnUNetTrainerGaussianBlur_200epochs(nnUNetTrainerRS):
-    def __init__(self, plans: dict, configuration: str, fold: int, dataset_json: dict, unpack_dataset: bool = True,
-                 device: torch.device = torch.device('cuda')):
-        super().__init__(plans, configuration, fold, dataset_json, unpack_dataset, device)
-        self.num_epochs = 200
-
-class nnUNetTrainer_500epochs(nnUNetTrainerRotation):
-    def __init__(self, plans: dict, configuration: str, fold: int, dataset_json: dict, unpack_dataset: bool = True,
-                 device: torch.device = torch.device('cuda')):
-        super().__init__(plans, configuration, fold, dataset_json, unpack_dataset, device)
-        self.num_epochs = 500
