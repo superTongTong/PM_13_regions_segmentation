@@ -13,6 +13,14 @@ from monai.transforms import (
     Orientationd,
     Resized,
     ToTensord,
+    RandCropByPosNegLabeld,
+    RandRotated,
+    RandZoomd,
+    CastToTyped,
+    RandGaussianNoised,
+    RandGaussianSmoothd,
+    RandAdjustContrastd,
+    RandFlipd,
     ScaleIntensityRanged
 )
 
@@ -25,6 +33,29 @@ def pci_transform(spatial_size=(128, 128, 128)):
         Resized(keys=["image"], spatial_size=spatial_size),
         # HU windowing for abdomen CT images: [-200, 300] to [0, 1], already done in the preprocessing
         # some DA
+        RandZoomd(
+            keys=["image"],
+            min_zoom=0.9,
+            max_zoom=1.5,
+            mode=("bilinear",) * len(["image"]),
+            align_corners=(True,) * len(["image"]),
+            prob=0.3,
+        ),
+        RandRotated(
+            keys=["image"],
+            range_x=(-15. / 360 * 2. * np.pi, 15. / 360 * 2. * np.pi),
+            range_y=(-15. / 360 * 2. * np.pi, 15. / 360 * 2. * np.pi),
+            range_z=(-15. / 360 * 2. * np.pi, 15. / 360 * 2. * np.pi),
+            mode=("bilinear",) * len(["image"]),
+            align_corners=(True,) * len(["image"]),
+            padding_mode=("border",) * len(["image"]),
+            prob=0.3,
+        ),
+        RandAdjustContrastd(
+            keys=["image"],
+            gamma=(0.7, 1.5),
+            prob=0.3,
+        ),
         # EnsureTyped(keys=["image"]),
         ToTensord(keys=["image"]),
     ])
@@ -85,8 +116,9 @@ def PCI_DataLoader(data_dir, batch_size=1, shuffle=True, split='train', spatial_
         return data_loader
 
 def main():
-    data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan/'
-    val_loader = PCI_DataLoader(data_dir, batch_size=1, shuffle=False, split='validation')
+    data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/'
+    val_loader = PCI_DataLoader(data_dir, batch_size=1, shuffle=True, split='train',
+                                spatial_size=(128, 128, 128), num_workers=2, use_sampler=True)
 
     for i, data in enumerate(val_loader):
         # img = data[0]
@@ -95,10 +127,11 @@ def main():
         img_array = img.numpy()
         sqzzed = np.squeeze(img_array)
         plt.figure("visualize", (8, 4))
-        print("array:", sqzzed.shape)
+        # print("array:", sqzzed.shape)
         # plt.title(f"caseID: {name}")
-        plt.imshow(sqzzed[:, :, 30], cmap="gray")
-        plt.show()
+        plt.imshow(sqzzed[:, :, 60], cmap="gray")
+        plt.savefig(f'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/train_noDA_{i}.png')
+        # plt.show()
 
 if __name__ == '__main__':
     start = time.time()
