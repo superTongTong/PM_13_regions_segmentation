@@ -423,6 +423,7 @@ class nnUNetTrainerDA5_500epochs(nnUNetTrainerDA5):
         self.num_epochs = 500
 
 class nnUNetTrainerRS(nnUNetTrainerDA5):
+    @staticmethod
     def get_training_transforms(
         patch_size: Union[np.ndarray, Tuple[int]],
         rotation_for_DA: dict,
