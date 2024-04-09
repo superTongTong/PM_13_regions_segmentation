@@ -103,11 +103,11 @@ def PCI_DataLoader(data_dir, batch_size=1, shuffle=True, split='train', spatial_
         number_counts = Counter(labels)
         for num, count in sorted(number_counts.items()):
             class_counts.append(count)
-        # class_counts = [9.0, 1.0]
         num_samples = sum(class_counts)
 
         # prepare the weighted sampler
         class_weights = [num_samples / class_counts[i] for i in range(len(class_counts))]
+
         weights = [class_weights[labels[i]] for i in range(int(num_samples))]
         sampler = WeightedRandomSampler(torch.DoubleTensor(weights), int(num_samples))
         #############
@@ -117,7 +117,7 @@ def PCI_DataLoader(data_dir, batch_size=1, shuffle=True, split='train', spatial_
 
 def main():
     data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/'
-    val_loader = PCI_DataLoader(data_dir, batch_size=1, shuffle=True, split='train',
+    val_loader = PCI_DataLoader(data_dir, batch_size=1, shuffle=False, split='train',
                                 spatial_size=(128, 128, 128), num_workers=2, use_sampler=True)
 
     for i, data in enumerate(val_loader):

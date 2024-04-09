@@ -127,14 +127,7 @@ def mian():
     gamma = 0.9
     seed = 42
     seed_everything(seed)
-    # model = nets.ViT(
-    #     in_channels=1,
-    #     img_size=(96,96,96),
-    #     patch_size=(16,16,16),
-    #     pos_embed='conv',
-    #     classification=True,
-    #     num_classes=4
-    # )
+
     #set model
     model = nets.resnet50(
         pretrained=False,
@@ -153,10 +146,10 @@ def mian():
 
     # prepare dataloader
 
-    train_loader = PCI_DataLoader(data_dir, batch_size=batch_size, shuffle=True,
-                                  split='train', spatial_size=(128, 128, 128), num_workers=2)
+    train_loader = PCI_DataLoader(data_dir, batch_size=batch_size, shuffle=False,
+                                  split='train', spatial_size=(128, 128, 128), num_workers=2, use_sampler=True)
     val_loader = PCI_DataLoader(data_dir, batch_size=1, shuffle=False,
-                                split='validation', spatial_size=(128, 128, 128), num_workers=2)
+                                split='validation', spatial_size=(128, 128, 128), num_workers=2, use_sampler=False)
 
     post_pred = Compose([EnsureType(), Activations(softmax=True)])
     post_label = Compose([EnsureType(), AsDiscrete(to_onehot=4, n_classes=4)])
@@ -169,7 +162,7 @@ def mian():
     # metric
     auc_metric = ROCAUCMetric()
     ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterion,
-          optimizer, scheduler, post_label, post_pred, auc_metric, save_plot_dir, device)
+                 optimizer, scheduler, post_label, post_pred, auc_metric, save_plot_dir, device)
 
 
 if __name__ == '__main__':
