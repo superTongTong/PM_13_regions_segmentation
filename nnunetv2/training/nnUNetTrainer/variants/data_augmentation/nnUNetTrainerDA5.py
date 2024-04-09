@@ -453,7 +453,7 @@ class nnUNetTrainerRS(nnUNetTrainerDA5):
             do_elastic_deform=False, alpha=(0, 0), sigma=(0, 0),
             do_rotation=False, angle_x=rotation_for_DA['x'], angle_y=rotation_for_DA['y'], angle_z=rotation_for_DA['z'],
             p_rot_per_axis=1,
-            do_scale=True, scale=(0.7, 1.4),
+            do_scale=False, scale=(0.7, 1.4),
             border_mode_data="constant", border_cval_data=0, order_data=order_resampling_data,
             border_mode_seg="constant", border_cval_seg=border_val_seg, order_seg=order_resampling_seg,
             random_crop=False,  # random cropping is part of our dataloaders
@@ -464,7 +464,7 @@ class nnUNetTrainerRS(nnUNetTrainerDA5):
         if do_dummy_2d_data_aug:
             tr_transforms.append(Convert2DTo3DTransform())
 
-        # tr_transforms.append(GaussianNoiseTransform(p_per_sample=0.1))
+        tr_transforms.append(GaussianNoiseTransform(p_per_sample=0.1))
         # tr_transforms.append(GaussianBlurTransform((0.5, 1.), different_sigma_per_channel=True, p_per_sample=0.2,
         #                                            p_per_channel=0.5))
         # tr_transforms.append(BrightnessMultiplicativeTransform(multiplier_range=(0.75, 1.25), p_per_sample=0.15))
@@ -518,7 +518,7 @@ class nnUNetTrainerRS(nnUNetTrainerDA5):
         return tr_transforms
 
 
-class nnUNetTrainerScale_200epochs(nnUNetTrainerRS):
+class nnUNetTrainerGaussianNoise_200epochs(nnUNetTrainerRS):
     def __init__(self, plans: dict, configuration: str, fold: int, dataset_json: dict, unpack_dataset: bool = True,
                  device: torch.device = torch.device('cuda')):
         super().__init__(plans, configuration, fold, dataset_json, unpack_dataset, device)
