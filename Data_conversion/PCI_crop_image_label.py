@@ -90,12 +90,15 @@ def mian():
     mask_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/masks/'
     save_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v2'
     csv_path = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/PCI_3_regions_new.csv'
-    random_seed = 42
+    # random_seed = 42
     df = pd.read_csv(csv_path)
-    img_list = os.listdir(data_dir)
-    train_list, valid_list = train_test_split(img_list,
-                                              test_size=0.2,
-                                              random_state=random_seed)
+    train_dir = os.path.join(data_dir, 'train')
+    val_data_dir = os.path.join(data_dir, 'val')
+    # train_list, valid_list = train_test_split(img_list,
+    #                                           test_size=0.2,
+    #                                           random_state=random_seed)
+    train_list = os.listdir(train_dir)
+    valid_list = os.listdir(val_data_dir)
 
     for img_name in train_list:
         print('-'*10)
@@ -113,7 +116,7 @@ def mian():
             # print('PCI_info:', case_PCI)
             mask_d = img_name.replace('_0001', '')
             mask_path = os.path.join(mask_dir, mask_d)
-            img_path = os.path.join(data_dir, img_name)
+            img_path = os.path.join(train_dir, img_name)
             for i in range(1, 4):
                 region_score = case_PCI[f'R{i}'].values
                 # print('region score:', region_score)
@@ -139,7 +142,7 @@ def mian():
 
             mask_d = img_name.replace('_0001', '')
             mask_path = os.path.join(mask_dir, mask_d)
-            img_path = os.path.join(data_dir, img_name)
+            img_path = os.path.join(val_data_dir, img_name)
 
             for i in range(1, 4):
                 region_score = case_PCI[f'R{i}'].values
