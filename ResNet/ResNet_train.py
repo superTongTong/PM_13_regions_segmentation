@@ -124,7 +124,7 @@ def mian():
         "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
 
     # set hyperparameters
-    batch_size = 32  #64 out of memory
+    batch_size = 2 # 32  #64 out of memory
     epochs = 100
     val_interval = 1
     lr = 5e-5 # 3e-5
@@ -155,6 +155,10 @@ def mian():
     val_loader, class_weights_val = PCI_DataLoader(data_dir, batch_size=1, shuffle=False,
                                 split='validation', spatial_size=(128, 128, 128), num_workers=2, use_sampler=False)
 
+    # convert class weights to tensor
+
+    class_weights_train = torch.tensor(class_weights_train, device=device)
+    class_weights_val = torch.tensor(class_weights_val, device=device)
     post_pred = Compose([EnsureType(), Activations(softmax=True)])
     post_label = Compose([EnsureType(), AsDiscrete(to_onehot=4, n_classes=4)])
 
