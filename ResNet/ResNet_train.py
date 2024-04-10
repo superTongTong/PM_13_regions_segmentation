@@ -26,7 +26,7 @@ def seed_everything(seed):
     torch.backends.cudnn.deterministic = True
 
 
-def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterion_train, criterion_val, optimizer, schduler, post_label, post_pred, auc_metric, save_dir, device):
+def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterion, optimizer, schduler, post_label, post_pred, auc_metric, save_dir, device):
     # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     best_metric = -1
     best_metric_epoch = -1
@@ -48,7 +48,7 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
             # model.to(device)
 
             output = model(data.float())
-            loss = criterion_train(output, label)
+            loss = criterion(output, label)
 
             optimizer.zero_grad()
             loss.backward()
@@ -73,7 +73,7 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
                     val_images, val_labels = val_data["image"].to(device), val_data["label"].to(device)
                     y_pred = torch.cat([y_pred, model(val_images)], dim=0)
                     y = torch.cat([y, val_labels], dim=0)
-                val_l = criterion_val(y_pred, y)
+                val_l = criterion(y_pred, y)
                 val_loss = val_l.item()
                 val_loss_list.append(val_loss)
                 print(f"epoch {epoch + 1} validation loss: {val_loss:.4f}")
@@ -121,10 +121,10 @@ def mian():
     data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v2/'
     save_plot_dir = "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/loss_acc_plot_combineLoss/"
     pretrain = torch.load(
-        "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
+        "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_34_23dataset.pth")
 
     # set hyperparameters
-    batch_size = 2 # 32  #64 out of memory
+    batch_size = 32  #64 out of memory
     epochs = 100
     val_interval = 1
     lr = 5e-5 # 3e-5
@@ -133,7 +133,7 @@ def mian():
     seed_everything(seed)
 
     #set model
-    model = nets.resnet50(
+    model = nets.resnet34(
         pretrained=False,
         n_input_channels=1,
         widen_factor=1,
@@ -150,22 +150,22 @@ def mian():
 
     # prepare dataloader
 
-    train_loader, class_weights_train = PCI_DataLoader(data_dir, batch_size=batch_size, shuffle=False,
+    train_loader, _ = PCI_DataLoader(data_dir, batch_size=batch_size, shuffle=False,
                                   split='train', spatial_size=(128, 128, 128), num_workers=2, use_sampler=True)
-    val_loader, class_weights_val = PCI_DataLoader(data_dir, batch_size=1, shuffle=False,
+    val_loader, _ = PCI_DataLoader(data_dir, batch_size=1, shuffle=False,
                                 split='validation', spatial_size=(128, 128, 128), num_workers=2, use_sampler=False)
 
     # convert class weights to tensor
 
-    class_weights_train = torch.tensor(class_weights_train, device=device)
-    class_weights_val = torch.tensor(class_weights_val, device=device)
+    # class_weights_train = torch.tensor(class_weights_train, device=device)
+    # class_weights_val = torch.tensor(class_weights_val, device=device)
     post_pred = Compose([EnsureType(), Activations(softmax=True)])
     post_label = Compose([EnsureType(), AsDiscrete(to_onehot=4, n_classes=4)])
 
     # criterion = nn.CrossEntropyLoss()
     # combine cross entropy loss with focal loss
-    criterion_train = CombinedLoss(alpha=1, gamma=2, weight=class_weights_train)
-    criterion_val = CombinedLoss(alpha=1, gamma=2, weight=class_weights_val)
+    criterion = CombinedLoss(alpha=1, gamma=2, weight=None)
+    # criterion_val = CombinedLoss(alpha=1, gamma=2, weight=None)
 
     # optimizer
     optimizer = optim.AdamW(model.parameters(), lr=lr)
@@ -173,7 +173,7 @@ def mian():
     scheduler = PolynomialLR(optimizer, total_iters=epochs, power=gamma)
     # metric
     auc_metric = ROCAUCMetric()
-    ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterion_train, criterion_val,
+    ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterion,
                  optimizer, scheduler, post_label, post_pred, auc_metric, save_plot_dir, device)
 
 
