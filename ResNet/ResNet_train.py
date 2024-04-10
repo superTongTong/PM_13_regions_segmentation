@@ -125,7 +125,7 @@ def mian():
 
     # set hyperparameters
     batch_size = 32  #64 out of memory
-    epochs = 50
+    epochs = 100
     val_interval = 1
     lr = 1e-4 # 3e-5
     gamma = 0.7
