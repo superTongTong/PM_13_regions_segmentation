@@ -33,29 +33,29 @@ def pci_transform(spatial_size=(128, 128, 128)):
         Resized(keys=["image"], spatial_size=spatial_size),
         # HU windowing for abdomen CT images: [-200, 300] to [0, 1], already done in the preprocessing
         # some DA
-        RandZoomd(
-            keys=["image"],
-            min_zoom=0.9,
-            max_zoom=1.5,
-            mode=("bilinear",) * len(["image"]),
-            align_corners=(True,) * len(["image"]),
-            prob=0.3,
-        ),
-        RandRotated(
-            keys=["image"],
-            range_x=(-15. / 360 * 2. * np.pi, 15. / 360 * 2. * np.pi),
-            range_y=(-15. / 360 * 2. * np.pi, 15. / 360 * 2. * np.pi),
-            range_z=(-15. / 360 * 2. * np.pi, 15. / 360 * 2. * np.pi),
-            mode=("bilinear",) * len(["image"]),
-            align_corners=(True,) * len(["image"]),
-            padding_mode=("border",) * len(["image"]),
-            prob=0.3,
-        ),
-        RandAdjustContrastd(
-            keys=["image"],
-            gamma=(0.7, 1.5),
-            prob=0.3,
-        ),
+        # RandZoomd(
+        #     keys=["image"],
+        #     min_zoom=0.9,
+        #     max_zoom=1.5,
+        #     mode=("bilinear",) * len(["image"]),
+        #     align_corners=(True,) * len(["image"]),
+        #     prob=0.3,
+        # ),
+        # RandRotated(
+        #     keys=["image"],
+        #     range_x=(-15. / 360 * 2. * np.pi, 15. / 360 * 2. * np.pi),
+        #     range_y=(-15. / 360 * 2. * np.pi, 15. / 360 * 2. * np.pi),
+        #     range_z=(-15. / 360 * 2. * np.pi, 15. / 360 * 2. * np.pi),
+        #     mode=("bilinear",) * len(["image"]),
+        #     align_corners=(True,) * len(["image"]),
+        #     padding_mode=("border",) * len(["image"]),
+        #     prob=0.3,
+        # ),
+        # RandAdjustContrastd(
+        #     keys=["image"],
+        #     gamma=(0.7, 1.5),
+        #     prob=0.3,
+        # ),
         # EnsureTyped(keys=["image"]),
         ToTensord(keys=["image"]),
     ])
