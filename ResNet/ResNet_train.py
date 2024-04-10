@@ -12,6 +12,7 @@ from monai.transforms import Compose, EnsureType, Activations, AsDiscrete
 from monai.metrics import ROCAUCMetric
 import time
 from plot_results import plot_metrics
+from monai.data import decollate_batch
 
 
 def seed_everything(seed):
@@ -30,7 +31,7 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
     best_metric_epoch = -1
     train_loss_list = []
     val_loss_list = []
-    # metric_values = []
+    metric_values = []
     acc_values = []
     for epoch in range(epochs):
         print("-" * 10)
@@ -78,15 +79,17 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
                 acc_value = torch.eq(y_pred.argmax(dim=1), y)
                 acc_metric = acc_value.sum().item() / len(acc_value)
                 acc_values.append(acc_metric)
-                # y_onehot = [post_label(i) for i in decollate_batch(y)]
-                # y_pred_act = [post_pred(i) for i in decollate_batch(y_pred)]
-                # # torch.tensor(y_pred_act, device="cpu")
-                # # torch.tensor(y_onehot, device="cpu")
-                # auc_metric(y_pred_act, y_onehot)
-                # auc_result = auc_metric.aggregate()
-                # auc_metric.reset()
-                # del y_pred_act, y_onehot
-                # metric_values.append(auc_result)
+                y_onehot = [post_label(i) for i in decollate_batch(y)]
+                y_onehot = torch.stack(y_onehot, dim=0).to(device)
+                y_pred_act = [post_pred(i) for i in decollate_batch(y_pred)]
+                # torch.tensor(y_pred_act, device="cpu")
+                # torch.tensor(y_onehot, device="cpu")
+                auc_metric(y_pred_act, y_onehot)
+                auc_result = auc_metric.aggregate()
+                auc_metric.reset()
+                del y_pred_act, y_onehot
+                metric_values.append(auc_result)
+                print(f"epoch {epoch + 1} AUC: {auc_result:.4f}")
 
                 if acc_metric > best_metric:
                     best_metric = acc_metric
@@ -110,12 +113,12 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
 
 def mian():
     # specify all the directories
-    # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan/'
+    # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/'
     # save_plot_dir = "C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/plot/"
     # pretrain = torch.load(
     #     "C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
-    data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan/'
-    save_plot_dir = "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/plot_v3_100epochs/"
+    data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v2/'
+    save_plot_dir = "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/loss_acc_plot_100epochs_allData/"
     pretrain = torch.load(
         "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
 
