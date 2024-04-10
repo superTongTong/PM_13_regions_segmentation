@@ -13,6 +13,7 @@ from monai.metrics import ROCAUCMetric
 import time
 from plot_results import plot_metrics
 from monai.data import decollate_batch
+from Loss_function import CombinedLoss
 
 
 def seed_everything(seed):
@@ -25,7 +26,7 @@ def seed_everything(seed):
     torch.backends.cudnn.deterministic = True
 
 
-def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterion, optimizer, schduler, post_label, post_pred, auc_metric, save_dir, device):
+def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterion_train, criterion_val, optimizer, schduler, post_label, post_pred, auc_metric, save_dir, device):
     # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     best_metric = -1
     best_metric_epoch = -1
@@ -47,7 +48,7 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
             # model.to(device)
 
             output = model(data.float())
-            loss = criterion(output, label)
+            loss = criterion_train(output, label)
 
             optimizer.zero_grad()
             loss.backward()
@@ -72,7 +73,7 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
                     val_images, val_labels = val_data["image"].to(device), val_data["label"].to(device)
                     y_pred = torch.cat([y_pred, model(val_images)], dim=0)
                     y = torch.cat([y, val_labels], dim=0)
-                val_l = criterion(y_pred, y)
+                val_l = criterion_val(y_pred, y)
                 val_loss = val_l.item()
                 val_loss_list.append(val_loss)
                 print(f"epoch {epoch + 1} validation loss: {val_loss:.4f}")
@@ -118,7 +119,7 @@ def mian():
     # pretrain = torch.load(
     #     "C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
     data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v2/'
-    save_plot_dir = "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/loss_acc_plot_100epochs_allData/"
+    save_plot_dir = "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/loss_acc_plot_combineLoss/"
     pretrain = torch.load(
         "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
 
@@ -126,7 +127,7 @@ def mian():
     batch_size = 32  #64 out of memory
     epochs = 100
     val_interval = 1
-    lr = 1e-6 # 3e-5
+    lr = 5e-5 # 3e-5
     gamma = 0.9
     seed = 42
     seed_everything(seed)
@@ -149,22 +150,26 @@ def mian():
 
     # prepare dataloader
 
-    train_loader = PCI_DataLoader(data_dir, batch_size=batch_size, shuffle=False,
+    train_loader, class_weights_train = PCI_DataLoader(data_dir, batch_size=batch_size, shuffle=False,
                                   split='train', spatial_size=(128, 128, 128), num_workers=2, use_sampler=True)
-    val_loader = PCI_DataLoader(data_dir, batch_size=1, shuffle=False,
+    val_loader, class_weights_val = PCI_DataLoader(data_dir, batch_size=1, shuffle=False,
                                 split='validation', spatial_size=(128, 128, 128), num_workers=2, use_sampler=False)
 
     post_pred = Compose([EnsureType(), Activations(softmax=True)])
     post_label = Compose([EnsureType(), AsDiscrete(to_onehot=4, n_classes=4)])
-    # loss function
-    criterion = nn.CrossEntropyLoss()
+
+    # criterion = nn.CrossEntropyLoss()
+    # combine cross entropy loss with focal loss
+    criterion_train = CombinedLoss(alpha=1, gamma=2, weight=class_weights_train)
+    criterion_val = CombinedLoss(alpha=1, gamma=2, weight=class_weights_val)
+
     # optimizer
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    optimizer = optim.AdamW(model.parameters(), lr=lr)
     # scheduler
     scheduler = PolynomialLR(optimizer, total_iters=epochs, power=gamma)
     # metric
     auc_metric = ROCAUCMetric()
-    ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterion,
+    ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterion_train, criterion_val,
                  optimizer, scheduler, post_label, post_pred, auc_metric, save_plot_dir, device)
 
 
