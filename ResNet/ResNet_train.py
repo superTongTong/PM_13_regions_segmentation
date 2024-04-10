@@ -121,19 +121,19 @@ def mian():
     data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v2/'
     save_plot_dir = "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/loss_acc_plot_combineLoss/"
     pretrain = torch.load(
-        "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_34_23dataset.pth")
+        "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_101.pth")
 
     # set hyperparameters
     batch_size = 32  #64 out of memory
-    epochs = 100
+    epochs = 50
     val_interval = 1
-    lr = 5e-5 # 3e-5
-    gamma = 0.9
+    lr = 1e-4 # 3e-5
+    gamma = 0.7
     seed = 42
     seed_everything(seed)
 
     #set model
-    model = nets.resnet34(
+    model = nets.resnet101(
         pretrained=False,
         n_input_channels=1,
         widen_factor=1,
