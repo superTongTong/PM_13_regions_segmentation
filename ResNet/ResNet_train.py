@@ -113,7 +113,7 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
 
 
 def mian():
-    # specify all the directories
+    # # specify all the directories
     # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/'
     # save_plot_dir = "C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/plot/"
     # pretrain = torch.load(
@@ -121,11 +121,11 @@ def mian():
     data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v2/'
     save_plot_dir = "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/loss_acc_plot_combineLoss/"
     pretrain = torch.load(
-        "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_101.pth")
+        "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
 
     # set hyperparameters
     batch_size = 32  #64 out of memory
-    epochs = 100
+    epochs = 50
     val_interval = 1
     lr = 1e-4 # 3e-5
     gamma = 0.7
@@ -133,7 +133,7 @@ def mian():
     seed_everything(seed)
 
     #set model
-    model = nets.resnet101(
+    model = nets.resnet50(
         pretrained=False,
         n_input_channels=1,
         widen_factor=1,
@@ -141,8 +141,8 @@ def mian():
         num_classes=4,
     )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # print(model)
     # load pretrain model
-
     pretrain['state_dict'] = {k.replace("module.", ""): v for k, v in pretrain['state_dict'].items()}
     model.to(device)
     model.load_state_dict(pretrain['state_dict'], strict=False)
@@ -162,14 +162,15 @@ def mian():
     post_pred = Compose([EnsureType(), Activations(softmax=True)])
     post_label = Compose([EnsureType(), AsDiscrete(to_onehot=4, n_classes=4)])
 
-    # criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss()
     # combine cross entropy loss with focal loss
-    criterion = CombinedLoss(alpha=1, gamma=2, weight=None)
-    # criterion_val = CombinedLoss(alpha=1, gamma=2, weight=None)
+    # criterion = CombinedLoss(alpha=1, gamma=2, weight=None)
 
     # optimizer
-    optimizer = optim.AdamW(model.parameters(), lr=lr)
+    # optimizer = optim.AdamW(model.parameters(), lr=lr)
+    optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=1e-4)
     # scheduler
+
     scheduler = PolynomialLR(optimizer, total_iters=epochs, power=gamma)
     # metric
     auc_metric = ROCAUCMetric()
