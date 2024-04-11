@@ -159,8 +159,8 @@ if __name__ == "__main__":
     following code for test multiple cases in the input folder
     '''
     input_folder = "./code_test_folder/for_evaluation/"
-    # pred_folder = "pred_DA5"
-    pred_path = os.path.join(input_folder, "pred_DA5")
+    pred_folder = "SimLowRes"
+    pred_path = os.path.join(input_folder, f"200epochs/{pred_folder}")
     gt_path = os.path.join(input_folder, "gt")
     # organs_masks_path = os.path.join(input_folder, "organs_masks")
     count = 0
@@ -188,5 +188,5 @@ if __name__ == "__main__":
     # plot_bar(df)
 
     # Save the DataFrame to a csv file
-    df.to_csv(f"{input_folder}evaluation_metrics_DA5_v2.csv", index=False)
+    df.to_csv(f"{input_folder}evaluation_metrics_{pred_folder}.csv", index=False)
     print("--- Total time %s seconds ---" % round(time.time() - start_time, 2))
