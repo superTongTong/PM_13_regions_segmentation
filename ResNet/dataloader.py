@@ -25,7 +25,7 @@ from monai.transforms import (
 )
 
 
-def pci_transform(spatial_size=(128, 128, 128)):
+def pci_transform_train(spatial_size=(128, 128, 128)):
     data_transform = Compose([
         LoadImaged(keys=["image"]),
         EnsureChannelFirstd(keys=["image"]),
@@ -63,6 +63,17 @@ def pci_transform(spatial_size=(128, 128, 128)):
     ])
     return data_transform
 
+def pci_transform_val(spatial_size=(128, 128, 128)):
+    data_transform = Compose([
+        LoadImaged(keys=["image"]),
+        EnsureChannelFirstd(keys=["image"]),
+        Orientationd(keys=["image"], axcodes="RAS"),
+        Resized(keys=["image"], spatial_size=spatial_size),
+        # HU windowing for abdomen CT images: [-200, 300] to [0, 1], already done in the preprocessing
+        # EnsureTyped(keys=["image"]),
+        ToTensord(keys=["image"]),
+    ])
+    return data_transform
 
 def get_data_list(data_dir, split='train'):
 
@@ -91,7 +102,13 @@ def get_data_list(data_dir, split='train'):
     return images, labels
 
 
-def PCI_DataLoader(data_dir, batch_size=1, shuffle=True, split='train', spatial_size=(128, 128, 128), num_workers=2, use_sampler=True):
+def PCI_DataLoader(data_dir, batch_size=1, shuffle=True, split='train', spatial_size=(128, 128, 128), num_workers=2, use_sampler=True, transforms=None):
+    if split == 'train':
+        print('Using training data')
+        transforms = pci_transform_train(spatial_size=spatial_size)
+    elif split == 'validation':
+        print('Using validation data')
+        transforms = pci_transform_val(spatial_size=spatial_size)
     class_counts = []
     imgs, labels = get_data_list(data_dir, split=split)
     data_files = [{"image": i, "label": l} for i, l in zip(imgs, labels)]
@@ -106,15 +123,15 @@ def PCI_DataLoader(data_dir, batch_size=1, shuffle=True, split='train', spatial_
     class_weights = [num_samples / class_counts[i] for i in range(len(class_counts))]
 
     if not use_sampler:
-        ds = CacheDataset(data=data_files, transform=pci_transform(spatial_size=spatial_size), progress=True)
+        ds = CacheDataset(data=data_files, transform=transforms, progress=True)
         data_loader = DataLoader(ds, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
         return data_loader, class_weights
     else:
         ###############
         weights = [class_weights[labels[i]] for i in range(int(num_samples))]
-        sampler = WeightedRandomSampler(torch.DoubleTensor(weights), int(num_samples))
+        sampler = WeightedRandomSampler(torch.DoubleTensor(weights), int(num_samples), replacement=True)# replace = True is important
         #############
-        ds = CacheDataset(data=data_files, transform=pci_transform(spatial_size=spatial_size), progress=True)
+        ds = CacheDataset(data=data_files, transform=transforms, progress=True)
         data_loader = DataLoader(ds, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, sampler=sampler)
         return data_loader, class_weights
 
