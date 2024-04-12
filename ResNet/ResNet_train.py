@@ -26,7 +26,7 @@ def seed_everything(seed):
     torch.backends.cudnn.deterministic = True
 
 
-def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterion, optimizer, schduler, post_label, post_pred, auc_metric, save_dir, device):
+def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterion, optimizer, scheduler, post_label, post_pred, auc_metric, save_dir, device):
     # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     best_metric = -1
     best_metric_epoch = -1
@@ -58,7 +58,7 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
             epoch_len = len(train_loader) // train_loader.batch_size
             print(f"{step}/{epoch_len}, train_loss: {loss.item():.4f}")
 
-        schduler.step()
+        scheduler.step()
         epoch_loss /= step
         train_loss_list.append(epoch_loss)
         print(f"epoch {epoch + 1} average loss: {epoch_loss:.4f}")
@@ -83,8 +83,6 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
                 y_onehot = [post_label(i) for i in decollate_batch(y)]
                 y_onehot = torch.stack(y_onehot, dim=0).to(device)
                 y_pred_act = [post_pred(i) for i in decollate_batch(y_pred)]
-                # torch.tensor(y_pred_act, device="cpu")
-                # torch.tensor(y_onehot, device="cpu")
                 auc_metric(y_pred_act, y_onehot)
                 auc_result = auc_metric.aggregate()
                 auc_metric.reset()
@@ -124,11 +122,11 @@ def mian():
         "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
 
     # set hyperparameters
-    batch_size = 32  #64 out of memory
+    batch_size = 16  #64 out of memory
     epochs = 50
     val_interval = 1
-    lr = 1e-4 # 3e-5
-    gamma = 0.7
+    lr = 5e-5 # 3e-5
+    gamma = 0.9
     seed = 42
     seed_everything(seed)
 
@@ -151,9 +149,9 @@ def mian():
     # prepare dataloader
 
     train_loader, _ = PCI_DataLoader(data_dir, batch_size=batch_size, shuffle=False,
-                                  split='train', spatial_size=(128, 128, 128), num_workers=2, use_sampler=True)
+                                     split='train', spatial_size=(128, 128, 128), num_workers=2, use_sampler=True)
     val_loader, _ = PCI_DataLoader(data_dir, batch_size=1, shuffle=False,
-                                split='validation', spatial_size=(128, 128, 128), num_workers=2, use_sampler=False)
+                                   split='validation', spatial_size=(128, 128, 128), num_workers=2, use_sampler=False)
 
     # convert class weights to tensor
 
@@ -167,10 +165,10 @@ def mian():
     # criterion = CombinedLoss(alpha=1, gamma=2, weight=None)
 
     # optimizer
-    # optimizer = optim.AdamW(model.parameters(), lr=lr)
-    optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=1e-4)
-    # scheduler
+    optimizer = optim.AdamW(model.parameters(), lr=lr)
+    # optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=1e-4)
 
+    # scheduler
     scheduler = PolynomialLR(optimizer, total_iters=epochs, power=gamma)
     # metric
     auc_metric = ROCAUCMetric()
