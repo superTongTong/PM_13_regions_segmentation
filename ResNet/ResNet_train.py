@@ -121,7 +121,7 @@ def mian():
     # Log in to wandb
     wandb.login(key='f20a2a6646a45224f8e867aa0c94a51efb8eed99')
     # Initialize wandb
-    run = wandb.init(project="my-project", name="mficb_DA4_lr9e-5_datasetv4")
+    run = wandb.init(project="my-project", name="mficb_DA4_lr9e-5_datasetv4_v2")
     # specify all the directories
     # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/'
     # save_plot_dir = "C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/plot/"
