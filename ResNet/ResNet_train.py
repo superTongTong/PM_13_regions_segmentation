@@ -45,6 +45,7 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
         for batch_data in train_loader:
             step += 1
             data, label = batch_data["image"].to(device), batch_data["label"].to(device)
+            print('sampled data label:', label)
             # model.to(device)
 
             output = model(data.float())
@@ -111,15 +112,22 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
 
 
 def mian():
-    # # specify all the directories
+    # specify all the directories
     # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/'
     # save_plot_dir = "C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/plot/"
+    #
+    # # pretrain = torch.load(
+    # #     "C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
+    #
     # pretrain = torch.load(
-    #     "C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
+    #     "C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/model_weights.torch")
+
     data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v2/'
     save_plot_dir = "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/loss_acc_plot_combineLoss/"
+    # pretrain = torch.load(
+    #     "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
     pretrain = torch.load(
-        "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
+        "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/model_weights.torch")
 
     # set hyperparameters
     batch_size = 16  #64 out of memory
@@ -141,9 +149,9 @@ def mian():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # print(model)
     # load pretrain model
-    pretrain['state_dict'] = {k.replace("module.", ""): v for k, v in pretrain['state_dict'].items()}
+    # pretrain['state_dict'] = {k.replace("module.", ""): v for k, v in pretrain['state_dict'].items()}
     model.to(device)
-    model.load_state_dict(pretrain['state_dict'], strict=False)
+    model.load_state_dict(pretrain, strict=False)
     print("load pretrain model")
 
     # prepare dataloader
