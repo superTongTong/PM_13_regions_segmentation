@@ -468,7 +468,7 @@ class nnUNetTrainerRS(nnUNetTrainerDA5):
         # tr_transforms.append(GaussianBlurTransform((0.5, 1.), different_sigma_per_channel=True, p_per_sample=0.2,
         #                                            p_per_channel=0.5))
         # tr_transforms.append(BrightnessMultiplicativeTransform(multiplier_range=(0.75, 1.25), p_per_sample=0.15))
-        # tr_transforms.append(ContrastAugmentationTransform(p_per_sample=0.15))
+        tr_transforms.append(ContrastAugmentationTransform(p_per_sample=0.15))
         tr_transforms.append(SimulateLowResolutionTransform(zoom_range=(0.5, 1), per_channel=True,
                                                             p_per_channel=0.5,
                                                             order_downsample=0, order_upsample=3, p_per_sample=0.25,
@@ -518,7 +518,7 @@ class nnUNetTrainerRS(nnUNetTrainerDA5):
         return tr_transforms
 
 
-class nnUNetTrainerR_S_Sim_200epochs(nnUNetTrainerRS):
+class nnUNetTrainerR_S_Sim_Con_200epochs(nnUNetTrainerRS):
     def __init__(self, plans: dict, configuration: str, fold: int, dataset_json: dict, unpack_dataset: bool = True,
                  device: torch.device = torch.device('cuda')):
         super().__init__(plans, configuration, fold, dataset_json, unpack_dataset, device)
