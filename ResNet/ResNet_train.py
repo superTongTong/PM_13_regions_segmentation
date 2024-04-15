@@ -121,7 +121,7 @@ def mian():
     # Log in to wandb
     wandb.login(key='f20a2a6646a45224f8e867aa0c94a51efb8eed99')
     # Initialize wandb
-    run = wandb.init(project="my-project", name="mficb_DA4_lr9e-5_datasetv4_v2")
+    run = wandb.init(project="my-project", name="mficb_DA4_lr5e-4_batch15_datasetv4")
     # specify all the directories
     # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/'
     # save_plot_dir = "C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/plot/"
@@ -140,10 +140,10 @@ def mian():
         "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/model_weights.torch")
 
     # set hyperparameters
-    batch_size = 32  #64 out of memory
+    batch_size = 15  #64 out of memory
     epochs = 50
     val_interval = 1
-    lr = 9e-5 # 3e-5
+    lr = 5e-4 # 3e-5
     gamma = 1.3
     seed = 42
     num_classes = 2
@@ -154,7 +154,7 @@ def mian():
         pretrained=False,
         n_input_channels=1,
         widen_factor=1,
-        conv1_t_stride=2,
+        # conv1_t_stride=2,
         num_classes=num_classes
     )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
