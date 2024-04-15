@@ -13,6 +13,7 @@ from monai.metrics import ROCAUCMetric
 import time
 from plot_results import plot_metrics
 from monai.data import decollate_batch
+import wandb
 from Loss_function import CombinedLoss
 
 
@@ -27,6 +28,8 @@ def seed_everything(seed):
 
 
 def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterion, optimizer, scheduler, post_label, post_pred, auc_metric, save_dir, device):
+    # Log gradients and model parameters
+    wandb.watch(model)
     # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     best_metric = -1
     best_metric_epoch = -1
@@ -104,6 +107,12 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
                         epoch + 1, acc_metric,  best_metric, best_metric_epoch
                     )
                 )
+                # Log metrics to wandb
+                wandb.log(
+                    {"Learning Rate": optimizer.param_groups[0]['lr'], "Train Loss": epoch_loss,
+                     "Validation Loss": val_loss, "AUC": auc_result, "Accuracy": acc_metric})
+
+
         # plot and save train and val loss curve, accuracy curve
         os.makedirs(save_dir, exist_ok=True)
         plot_metrics(train_loss_list, val_loss_list, acc_values, save_path=save_dir)
@@ -112,6 +121,10 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
 
 
 def mian():
+    # Log in to wandb
+    wandb.login(key='f20a2a6646a45224f8e867aa0c94a51efb8eed99')
+    # Initialize wandb
+    run = wandb.init(project="my-project", name="my-run")
     # specify all the directories
     # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/'
     # save_plot_dir = "C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/plot/"
@@ -121,19 +134,19 @@ def mian():
     #
     # pretrain = torch.load(
     #     "C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/model_weights.torch")
-
+    #
     data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v2/'
-    save_plot_dir = "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/loss_acc_plot_combineLoss/"
+    save_plot_dir = "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/loss_acc_plot_mfcib/"
     # pretrain = torch.load(
     #     "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
     pretrain = torch.load(
         "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/model_weights.torch")
 
     # set hyperparameters
-    batch_size = 16  #64 out of memory
+    batch_size = 32  #64 out of memory
     epochs = 50
     val_interval = 1
-    lr = 5e-5 # 3e-5
+    lr = 2e-5 # 3e-5
     gamma = 0.9
     seed = 42
     seed_everything(seed)
@@ -187,4 +200,6 @@ def mian():
 if __name__ == '__main__':
     start = time.time()
     mian()
+    # Finish the wandb run
+    wandb.finish()
     print('Elapsed time: {}'.format(time.time() - start))
