@@ -146,6 +146,7 @@ def mian():
     lr = 9e-5 # 3e-5
     gamma = 1.3
     seed = 42
+    num_classes = 2
     seed_everything(seed)
 
     #set model
@@ -154,7 +155,7 @@ def mian():
         n_input_channels=1,
         widen_factor=1,
         conv1_t_stride=2,
-        num_classes=4,
+        num_classes=num_classes
     )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # print(model)
@@ -176,7 +177,7 @@ def mian():
     # class_weights_train = torch.tensor(class_weights_train, device=device)
     # class_weights_val = torch.tensor(class_weights_val, device=device)
     post_pred = Compose([EnsureType(), Activations(softmax=True)])
-    post_label = Compose([EnsureType(), AsDiscrete(to_onehot=4, n_classes=4)])
+    post_label = Compose([EnsureType(), AsDiscrete(to_onehot=num_classes, n_classes=num_classes)])
 
     criterion = nn.CrossEntropyLoss()
     # combine cross entropy loss with focal loss
