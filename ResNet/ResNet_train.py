@@ -146,7 +146,7 @@ def mian():
     batch_size = 32  #64 out of memory
     epochs = 50
     val_interval = 1
-    lr = 2e-5 # 3e-5
+    lr = 9e-5 # 3e-5
     gamma = 0.9
     seed = 42
     seed_everything(seed)
