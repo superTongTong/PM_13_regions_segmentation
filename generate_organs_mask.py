@@ -34,12 +34,12 @@ def main(segmentations=None):
     parser = argparse.ArgumentParser(description="generate liver, stomach, pancreas, spleen masks.")
 
     parser.add_argument("-i", '--input',
-                        default=r".\code_test_folder\3d_slicer_checker\images",
+                        default=r".\code_test_folder\for_evaluation\images",
                         help="CT nifti image or folder of dicom slices",
                         type=lambda p: Path(p).absolute())
 
     parser.add_argument("-o", '--output',
-                        default=r".\code_test_folder\3d_slicer_checker\organs_masks",
+                        default=r".\code_test_folder\for_evaluation\organs_masks",
                         help="Output directory for segmentation masks",
                         type=lambda p: Path(p).absolute())
 
