@@ -121,7 +121,7 @@ def mian():
     # Log in to wandb
     wandb.login(key='f20a2a6646a45224f8e867aa0c94a51efb8eed99')
     # Initialize wandb
-    run = wandb.init(project="my-project", name="mficb_lr5e-4_batch15_datasetv4_DA_lowProb")
+    run = wandb.init(project="my-project", name="mficb_lr5e-5_batch32_datasetv2_train-train")
     # specify all the directories
     # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/'
     # save_plot_dir = "C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/plot/"
@@ -132,21 +132,22 @@ def mian():
     # pretrain = torch.load(
     #     "C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/model_weights.torch")
     #
-    data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v4/'
+    data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v2/'
     # save_plot_dir = "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/loss_acc_plot_mfcib/"
     # pretrain = torch.load(
     #     "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
     pretrain = torch.load(
         "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/model_weights.torch")
+    # implment loss function here
 
     # set hyperparameters
-    batch_size = 15  #64 out of memory
+    batch_size = 32  #64 out of memory
     epochs = 50
     val_interval = 1
-    lr = 5e-4 # 3e-5
-    gamma = 1.3
+    lr = 5e-5 # 3e-5
+    gamma = 0.9
     seed = 42
-    num_classes = 2
+    num_classes = 4
     seed_everything(seed)
 
     #set model
@@ -168,8 +169,9 @@ def mian():
     # prepare dataloader
 
     train_loader, _ = PCI_DataLoader(data_dir, batch_size=batch_size, shuffle=False,
-                                     split='train', spatial_size=(128, 128, 128), p_gaussianNoise=0.1, p_Smooth=0.1,
-                                     p_Rotate=0.3, p_Contrast=0.3, p_Zoom=0.3, num_workers=2, use_sampler=True)
+                                     split='train', spatial_size=(128, 128, 128), p_gaussianNoise=0.3, p_Smooth=0.3,
+                                     p_Rotate=0.8, p_Contrast=0.8, p_Zoom=0.5, num_workers=2, use_sampler=True)
+
     val_loader, _ = PCI_DataLoader(data_dir, batch_size=1, shuffle=False,
                                    split='validation', spatial_size=(128, 128, 128), num_workers=2, use_sampler=False)
 
