@@ -141,7 +141,7 @@ def mian():
     # implment loss function here
 
     # set hyperparameters
-    batch_size = 32  #64 out of memory
+    batch_size = 16  #64 out of memory
     epochs = 50
     val_interval = 1
     lr = 9e-5 # 3e-5
@@ -165,9 +165,15 @@ def mian():
     model.to(device)
     model.load_state_dict(pretrain, strict=False)
     print("load pretrain model")
+    # freeze the model
+    for param in model.parameters():
+        param.requires_grad = False
+    for param in model.fc.parameters():
+        param.requires_grad = True
+    print("freeze the model, only train the last layer....")
+
 
     # prepare dataloader
-
     train_loader, _ = PCI_DataLoader(data_dir, batch_size=batch_size, shuffle=False,
                                      split='train', spatial_size=(128, 128, 128), p_gaussianNoise=0.3, p_Smooth=0.3,
                                      p_Rotate=0.8, p_Contrast=0.8, p_Zoom=0.5, num_workers=2, use_sampler=True)
