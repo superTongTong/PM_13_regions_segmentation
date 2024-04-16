@@ -106,11 +106,11 @@ def PCI_DataLoader(data_dir, batch_size=1, shuffle=True, split='train', spatial_
                    num_workers=2, p_gaussianNoise=0.3, p_Smooth=0.3, p_Rotate=0.9, p_Contrast=0.9, p_Zoom=0.5,
                    use_sampler=True, transforms=None):
     if split == 'train':
-        print('Using training data')
+        print('Loading training data')
         transforms = pci_transform_train(spatial_size=spatial_size, p_gaussianNoise=p_gaussianNoise, p_Smooth=p_Smooth,
                                          p_Rotate=p_Rotate, p_Contrast=p_Contrast, p_Zoom=p_Zoom)
     elif split == 'validation':
-        print('Using validation data')
+        print('Loading validation data')
         transforms = pci_transform_val(spatial_size=spatial_size)
     class_counts = []
     imgs, labels = get_data_list(data_dir, split=split)
@@ -140,11 +140,11 @@ def PCI_DataLoader(data_dir, batch_size=1, shuffle=True, split='train', spatial_
 
 def main():
     data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/'
-    val_loader = PCI_DataLoader(data_dir, batch_size=1, shuffle=False, split='train',
+    train_loader = PCI_DataLoader(data_dir, batch_size=1, shuffle=False, split='train',
                                 spatial_size=(128, 128, 128), p_gaussianNoise=0.3, p_Smooth=0.3, p_Rotate=0.9,
                                 p_Contrast=0.9, p_Zoom=0.5, num_workers=2, use_sampler=True)
 
-    for i, data in enumerate(val_loader):
+    for i, data in enumerate(train_loader):
         # img = data[0]
         img = data['image']
         # name = img[meta]['filename_or_obj']
@@ -154,8 +154,8 @@ def main():
         # print("array:", sqzzed.shape)
         # plt.title(f"caseID: {name}")
         plt.imshow(sqzzed[:, :, 60], cmap="gray")
-        plt.savefig(f'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/train_noDA_{i}.png')
-        # plt.show()
+        # plt.savefig(f'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/train_noDA_{i}.png')
+        plt.show()
 
 if __name__ == '__main__':
     start = time.time()
