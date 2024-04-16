@@ -48,8 +48,7 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
         for batch_data in train_loader:
             step += 1
             data, label = batch_data["image"].to(device), batch_data["label"].to(device)
-            print('sampled data label:', label)
-            # model.to(device)
+            # print('sampled data label:', label)
 
             output = model(data.float())
             loss = criterion(output, label)
@@ -121,7 +120,7 @@ def mian():
     # Log in to wandb
     wandb.login(key='f20a2a6646a45224f8e867aa0c94a51efb8eed99')
     # Initialize wandb
-    run = wandb.init(project="my-project", name="mficb_lr9e-5_batch32_datasetv2_widen2")
+    run = wandb.init(project="my-project", name="mficb_lr9e-5_batch32_datasetv2_widen2_freeze_layer1_layer2")
     # specify all the directories
     # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/'
     # save_plot_dir = "C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/plot/"
@@ -166,11 +165,16 @@ def mian():
     model.load_state_dict(pretrain, strict=False)
     print("load pretrain model")
     # freeze the model
-    for param in model.parameters():
-        param.requires_grad = False
-    for param in model.fc.parameters():
-        param.requires_grad = True
-    print("freeze the model, only train the last layer....")
+    for name, parameter in model.named_parameters():
+        if 'layer1' in name:
+            print(f"parameter '{name}' will be frozen")
+            parameter.requires_grad = False
+        elif 'layer2' in name:
+            print(f"parameter '{name}' will be frozen")
+            parameter.requires_grad = False
+        else:
+            print(f"parameter '{name}' will not be frozen")
+            parameter.requires_grad = True
 
 
     # prepare dataloader
