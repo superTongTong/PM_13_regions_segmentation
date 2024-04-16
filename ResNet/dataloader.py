@@ -25,7 +25,7 @@ from monai.transforms import (
 )
 
 
-def pci_transform_train(spatial_size=(128, 128, 128)):
+def pci_transform_train(spatial_size=(128, 128, 128), p_gaussianNoise=0.3, p_Smooth=0.3, p_Rotate=0.9, p_Contrast=0.9, p_Zoom=0.5):
     data_transform = Compose([
         LoadImaged(keys=["image"]),
         EnsureChannelFirstd(keys=["image"]),
@@ -33,16 +33,16 @@ def pci_transform_train(spatial_size=(128, 128, 128)):
         Resized(keys=["image"], spatial_size=spatial_size),
         # HU windowing for abdomen CT images: [-200, 300] to [0, 1], already done in the preprocessing
         # some DA
-        RandGaussianNoised(keys=["image"], prob=0.3),
-        RandGaussianSmoothd(keys=["image"], prob=0.3),
-        # RandZoomd(
-        #     keys=["image"],
-        #     min_zoom=0.9,
-        #     max_zoom=1.5,
-        #     mode=("bilinear",) * len(["image"]),
-        #     align_corners=(True,) * len(["image"]),
-        #     prob=0.5,
-        # ),
+        RandGaussianNoised(keys=["image"], prob=p_gaussianNoise),
+        RandGaussianSmoothd(keys=["image"], prob=p_Smooth),
+        RandZoomd(
+            keys=["image"],
+            min_zoom=0.9,
+            max_zoom=1.5,
+            mode=("bilinear",) * len(["image"]),
+            align_corners=(True,) * len(["image"]),
+            prob=p_Zoom,
+        ),
         RandRotated(
             keys=["image"],
             range_x=(-15. / 360 * 2. * np.pi, 15. / 360 * 2. * np.pi),
@@ -51,12 +51,12 @@ def pci_transform_train(spatial_size=(128, 128, 128)):
             mode=("bilinear",) * len(["image"]),
             align_corners=(True,) * len(["image"]),
             padding_mode=("border",) * len(["image"]),
-            prob=0.9,
+            prob=p_Rotate,
         ),
         RandAdjustContrastd(
             keys=["image"],
             gamma=(0.7, 1.5),
-            prob=0.9,
+            prob=p_Contrast,
         ),
         # EnsureTyped(keys=["image"]),
         ToTensord(keys=["image"]),
@@ -102,10 +102,13 @@ def get_data_list(data_dir, split='train'):
     return images, labels
 
 
-def PCI_DataLoader(data_dir, batch_size=1, shuffle=True, split='train', spatial_size=(128, 128, 128), num_workers=2, use_sampler=True, transforms=None):
+def PCI_DataLoader(data_dir, batch_size=1, shuffle=True, split='train', spatial_size=(128, 128, 128),
+                   num_workers=2, p_gaussianNoise=0.3, p_Smooth=0.3, p_Rotate=0.9, p_Contrast=0.9, p_Zoom=0.5,
+                   use_sampler=True, transforms=None):
     if split == 'train':
         print('Using training data')
-        transforms = pci_transform_train(spatial_size=spatial_size)
+        transforms = pci_transform_train(spatial_size=spatial_size, p_gaussianNoise=p_gaussianNoise, p_Smooth=p_Smooth,
+                                         p_Rotate=p_Rotate, p_Contrast=p_Contrast, p_Zoom=p_Zoom)
     elif split == 'validation':
         print('Using validation data')
         transforms = pci_transform_val(spatial_size=spatial_size)
@@ -123,7 +126,7 @@ def PCI_DataLoader(data_dir, batch_size=1, shuffle=True, split='train', spatial_
     class_weights = [num_samples / class_counts[i] for i in range(len(class_counts))]
 
     if not use_sampler:
-        ds = CacheDataset(data=data_files, transform=transforms, progress=True)
+        ds = CacheDataset(data=data_files, transform=transforms, progress=False)
         data_loader = DataLoader(ds, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
         return data_loader, class_weights
     else:
@@ -131,14 +134,15 @@ def PCI_DataLoader(data_dir, batch_size=1, shuffle=True, split='train', spatial_
         weights = [class_weights[labels[i]] for i in range(int(num_samples))]
         sampler = WeightedRandomSampler(torch.DoubleTensor(weights), int(num_samples), replacement=True)# replace = True is important
         #############
-        ds = CacheDataset(data=data_files, transform=transforms, progress=True)
+        ds = CacheDataset(data=data_files, transform=transforms, progress=False)
         data_loader = DataLoader(ds, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, sampler=sampler)
         return data_loader, class_weights
 
 def main():
     data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/'
     val_loader = PCI_DataLoader(data_dir, batch_size=1, shuffle=False, split='train',
-                                spatial_size=(128, 128, 128), num_workers=2, use_sampler=True)
+                                spatial_size=(128, 128, 128), p_gaussianNoise=0.3, p_Smooth=0.3, p_Rotate=0.9,
+                                p_Contrast=0.9, p_Zoom=0.5, num_workers=2, use_sampler=True)
 
     for i, data in enumerate(val_loader):
         # img = data[0]
