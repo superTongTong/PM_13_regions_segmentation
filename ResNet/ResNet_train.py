@@ -121,7 +121,7 @@ def mian():
     # Log in to wandb
     wandb.login(key='f20a2a6646a45224f8e867aa0c94a51efb8eed99')
     # Initialize wandb
-    run = wandb.init(project="my-project", name="mficb_DA4_lr5e-4_batch8_datasetv4")
+    run = wandb.init(project="my-project", name="mficb_lr5e-4_batch15_datasetv4_DA_lowProb")
     # specify all the directories
     # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/'
     # save_plot_dir = "C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/plot/"
@@ -140,7 +140,7 @@ def mian():
         "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/model_weights.torch")
 
     # set hyperparameters
-    batch_size = 8  #64 out of memory
+    batch_size = 15  #64 out of memory
     epochs = 50
     val_interval = 1
     lr = 5e-4 # 3e-5
@@ -154,7 +154,7 @@ def mian():
         pretrained=False,
         n_input_channels=1,
         widen_factor=1,
-        # conv1_t_stride=2,
+        conv1_t_stride=2,
         num_classes=num_classes
     )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -168,7 +168,8 @@ def mian():
     # prepare dataloader
 
     train_loader, _ = PCI_DataLoader(data_dir, batch_size=batch_size, shuffle=False,
-                                     split='train', spatial_size=(128, 128, 128), num_workers=2, use_sampler=True)
+                                     split='train', spatial_size=(128, 128, 128), p_gaussianNoise=0.1, p_Smooth=0.1,
+                                     p_Rotate=0.3, p_Contrast=0.3, p_Zoom=0.3, num_workers=2, use_sampler=True)
     val_loader, _ = PCI_DataLoader(data_dir, batch_size=1, shuffle=False,
                                    split='validation', spatial_size=(128, 128, 128), num_workers=2, use_sampler=False)
 
