@@ -44,6 +44,8 @@ def compute_all_metrics(pred, gt, spacing, bor_gt, bor_pred):
     # Compute the surface distances
     DSC = compute_dice_coefficient(gt, pred)
     border_DSC = compute_dice_coefficient(bor_gt, bor_pred)
+    border_surface_distance = compute_surface_distances(bor_gt, bor_pred, spacing)
+    border_SD1 = compute_surface_dice_at_tolerance(border_surface_distance, 1)
     border_clDice = clDice(bor_pred, bor_gt)
     surface_distances = compute_surface_distances(gt, pred, spacing)
     # hausdorff_distance = compute_robust_hausdorff(surface_distances, 100)
@@ -56,6 +58,7 @@ def compute_all_metrics(pred, gt, spacing, bor_gt, bor_pred):
     # round up all the metrics to 4 decimal places
     DSC = round(DSC, 4)
     border_DSC = round(border_DSC, 4)
+    border_SD1 = round(border_SD1, 4)
     border_clDice = round(border_clDice, 4)
     # hausdorff_distance = round(hausdorff_distance, 4)
     HD95 = round(HD95, 4)
@@ -65,7 +68,7 @@ def compute_all_metrics(pred, gt, spacing, bor_gt, bor_pred):
     surface_dice_2mm = round(surface_dice_2mm, 4)
     surface_dice_3mm = round(surface_dice_3mm, 4)
 
-    return DSC, border_DSC, border_clDice, HD95, average_distance_pred_to_gt, average_distance_gt_to_pred, surface_dice_1mm, surface_dice_2mm, surface_dice_3mm
+    return DSC, border_DSC, border_SD1, border_clDice, HD95, average_distance_pred_to_gt, average_distance_gt_to_pred, surface_dice_1mm, surface_dice_2mm, surface_dice_3mm
 
 
 def obtain_border_regions(pred, gt, liver_mask, stomach_mask, spleen_mask, pancreas_mask, itk_img):
@@ -140,16 +143,18 @@ def main(prediction_file_path, ground_truth_file_path, dir_organ, case_number):
         b_pred_bool = p_b_mask.astype(bool)
         b_gt_bool = g_b_mask.astype(bool)
 
-        (DSC, inter_organ, inter_organ_clDice, HD95, MASD_gt_to_pred, MASD_pred_to_gt, surface_dice_1mm,
+        (DSC, inter_organ, inter_organ_SD1, inter_organ_clDice, HD95, MASD_gt_to_pred, MASD_pred_to_gt, surface_dice_1mm,
          surface_dice_2mm, surface_dice_3mm) = compute_all_metrics(array_pred_bool, array_gt_bool, sitk_spacing, b_gt_bool, b_pred_bool)
 
         data.append({"Case ID": case_number, "Region_num": i, "DSC": DSC, "Inter-organ DSC": inter_organ,
-                     "Inter-organ clDice": inter_organ_clDice, "surface_dice_1mm": surface_dice_1mm,
+                     "Inter-organ SD1": inter_organ_SD1, "Inter-organ clDice": inter_organ_clDice,
+                     "surface_dice_1mm": surface_dice_1mm,
                      "surface_dice_2mm": surface_dice_2mm, "surface_dice_3mm": surface_dice_3mm,
-                     "HD95": HD95,"MASD gt to pred": MASD_gt_to_pred, "MASD pred to gt": MASD_pred_to_gt})
+                     "HD95": HD95, "MASD gt to pred": MASD_gt_to_pred, "MASD pred to gt": MASD_pred_to_gt})
 
     avg_DSC = (data[0]["DSC"] + data[1]["DSC"] + data[2]["DSC"]) / 3
     avg_border_DSC = (data[0]["Inter-organ DSC"] + data[1]["Inter-organ DSC"] + data[2]["Inter-organ DSC"]) / 3
+    avg_border_SD1 = (data[0]["Inter-organ SD1"] + data[1]["Inter-organ SD1"] + data[2]["Inter-organ SD1"]) / 3
     avg_border_clDice = (data[0]["Inter-organ clDice"] + data[1]["Inter-organ clDice"] + data[2]["Inter-organ clDice"]) / 3
     # avg_hausdorff_distance = (data[0]["hausdorff_distance"] + data[1]["hausdorff_distance"] + data[2]["hausdorff_distance"]) / 3
     avg_HD95 = (data[0]["HD95"] + data[1]["HD95"] + data[2]["HD95"]) / 3
@@ -160,7 +165,8 @@ def main(prediction_file_path, ground_truth_file_path, dir_organ, case_number):
     avg_surface_dice_3mm = (data[0]["surface_dice_3mm"] + data[1]["surface_dice_3mm"] + data[2]["surface_dice_3mm"]) / 3
 
     data.append({"Case ID": case_number, "Region_num": "average of 3 regions", "DSC": round(avg_DSC, 4),
-                 "Inter-organ DSC": round(avg_border_DSC, 4), "Inter-organ clDice": round(avg_border_clDice, 4),
+                 "Inter-organ DSC": round(avg_border_DSC, 4), "Inter-organ SD1": round(avg_border_SD1, 4),
+                 "Inter-organ clDice": round(avg_border_clDice, 4),
                  "surface_dice_1mm": round(avg_surface_dice_1mm, 4), "surface_dice_2mm": round(avg_surface_dice_2mm, 4),
                  "surface_dice_3mm": round(avg_surface_dice_3mm, 4), "HD95": round(avg_HD95, 4),
                  "MASD gt to pred": round(avg_MASD_gt_to_pred, 4), "MASD pred to gt": round(avg_MASD_pred_to_gt, 4)})
@@ -182,7 +188,7 @@ if __name__ == "__main__":
     following code for test multiple cases in the input folder
     '''
     input_folder = "./code_test_folder/for_evaluation/"
-    pred_folder = "SimLowRes"
+    pred_folder = "gaussianBlur"
 
     # pred_folder = "gaussianBlur"
     # pred_folder = "gaussianNoise"
@@ -191,6 +197,8 @@ if __name__ == "__main__":
     # pred_folder = "rotation"
     # pred_folder = "scale"
     # pred_folder = "SimLowRes"
+    # pred_folder = "R_S_Sim_Con"
+    # pred_folder = "R_S_Sim_Con_GBlur"
 
     pred_path = os.path.join(input_folder, f"200epochs/{pred_folder}")
     gt_path = os.path.join(input_folder, "gt")
