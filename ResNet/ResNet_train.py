@@ -154,7 +154,7 @@ def mian():
     model = nets.resnet50(
         pretrained=False,
         n_input_channels=1,
-        widen_factor=1,
+        widen_factor=2,
         conv1_t_stride=2,
         num_classes=num_classes
     )
