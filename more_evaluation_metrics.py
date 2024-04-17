@@ -188,8 +188,8 @@ if __name__ == "__main__":
     following code for test multiple cases in the input folder
     '''
     input_folder = "./code_test_folder/for_evaluation/"
-    pred_folder = "gaussianBlur"
-
+    pred_folder = "contrastAgument"
+    # pred_folder = "contrastAgument"
     # pred_folder = "gaussianBlur"
     # pred_folder = "gaussianNoise"
     # pred_folder = "no_DA_200epoch"
