@@ -52,7 +52,7 @@ def get_data_list(data_dir, split='train'):
     print('Number of scans: {}'.format(n_files))
     images = [os.path.join(data_dir_img, file_name) for file_name in file_names]
     labels = [int(file_name[14:15]) for file_name in file_names]
-    caseID = [file_name[0:5] for file_name in file_names]
+    caseID = [file_name[0:14] for file_name in file_names]
     return images, labels, caseID
 
 
@@ -79,44 +79,51 @@ def plot_img(in_data_loder, save_path):
         img = data['image']
         label = data['label']
         caseID = data['CaseID']
-        img_array = img.numpy()
-        squeezed = np.squeeze(img_array)
-        plt.figure(figsize=(15, 5))
+        # check if the csaeID already exists in the save_path
+        if os.path.exists(f'{save_path}{caseID}.png'):
+            print(f'{caseID}.png already exists in {save_path}')
+            continue
+        else:
+            img_array = img.numpy()
+            squeezed = np.squeeze(img_array)
+            plt.figure(figsize=(15, 5))
 
-        # Plot the first image
-        plt.subplot(1, 3, 1)
-        plt.imshow(squeezed[64, :, :], cmap="gray")
+            # Plot the first image
+            plt.subplot(1, 3, 1)
+            plt.imshow(squeezed[64, :, :], cmap="gray")
 
-        # Plot the second image
-        plt.subplot(1, 3, 2)
-        plt.imshow(squeezed[:, 64, :], cmap="gray")
+            # Plot the second image
+            plt.subplot(1, 3, 2)
+            plt.imshow(squeezed[:, 64, :], cmap="gray")
 
-        # Plot the third image
-        plt.subplot(1, 3, 3)
-        plt.imshow(squeezed[:, :, 64], cmap="gray")
+            # Plot the third image
+            plt.subplot(1, 3, 3)
+            plt.imshow(squeezed[:, :, 64], cmap="gray")
 
-        plt.title(f'{caseID}, label: {label.item()}')
-        plt.savefig(f'{save_path}{caseID}.png')
-        # plt.show()
+            plt.title(f'{caseID}, label: {label.item()}')
+            plt.savefig(f'{save_path}{caseID}.png')
+            print(f'processed {caseID}.png')
+            plt.close()
+            # plt.show()
 
 
 def main():
-    # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/'
-    # val_img_save_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/val_images/'
-    data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v2/'
-    train_img_save_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/train_images/'
-    val_img_save_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/val_images/'
-    os.makedirs(train_img_save_dir, exist_ok=True)
+    data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/'
+    val_img_save_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/val_images/'
+    # data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v2/'
+    # train_img_save_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/train_images/'
+    # val_img_save_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/val_images/'
+    # os.makedirs(train_img_save_dir, exist_ok=True)
     os.makedirs(val_img_save_dir, exist_ok=True)
 
-    train_loader, _ = PCI_DataLoader(data_dir, batch_size=1, shuffle=False, split='train',
-                                     spatial_size=(128, 128, 128),
-                                     p_gaussianNoise=0.3, p_Smooth=0.3, p_Rotate=0.9,
-                                     p_Contrast=0.9, p_Zoom=0.5, num_workers=2, use_sampler=True)
+    # train_loader, _ = PCI_DataLoader(data_dir, batch_size=1, shuffle=False, split='train',
+    #                                  spatial_size=(128, 128, 128),
+    #                                  p_gaussianNoise=0.3, p_Smooth=0.3, p_Rotate=0.9,
+    #                                  p_Contrast=0.9, p_Zoom=0.5, num_workers=2, use_sampler=True)
     val_loader, _ = PCI_DataLoader(data_dir, batch_size=1, shuffle=False, split='validation',
                                    spatial_size=(128, 128, 128),
                                    num_workers=2, use_sampler=False)
-    plot_img(train_loader, train_img_save_dir)
+    # plot_img(train_loader, train_img_save_dir)
     plot_img(val_loader, val_img_save_dir)
 
 
