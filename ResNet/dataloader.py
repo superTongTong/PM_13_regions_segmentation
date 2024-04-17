@@ -52,13 +52,14 @@ def get_data_list(data_dir, split='train'):
     print('Number of scans: {}'.format(n_files))
     images = [os.path.join(data_dir_img, file_name) for file_name in file_names]
     labels = [int(file_name[14:15]) for file_name in file_names]
-    return images, labels
+    caseID = [file_name[0:5] for file_name in file_names]
+    return images, labels, caseID
 
 
 def PCI_DataLoader(data_dir, batch_size=1, shuffle=True, split='train', spatial_size=(128, 128, 128), num_workers=2,
                    p_gaussianNoise=0.1, p_Smooth=0.1, p_Rotate=0.5, p_Contrast=0.5, p_Zoom=0.5, use_sampler=True):
-    imgs, labels = get_data_list(data_dir, split=split)
-    data_files = [{"image": i, "label": l} for i, l in zip(imgs, labels)]
+    imgs, labels, caseID = get_data_list(data_dir, split=split)
+    data_files = [{"image": i, "label": l, "CaseID": id} for i, l, id in zip(imgs, labels, caseID)]
     transforms = pci_transform_train(spatial_size=spatial_size, p_gaussianNoise=p_gaussianNoise, p_Smooth=p_Smooth,
                                      p_Rotate=p_Rotate, p_Contrast=p_Contrast, p_Zoom=p_Zoom) if split == 'train' else pci_transform_val(spatial_size=spatial_size)
     class_counts = [count for num, count in sorted(Counter(labels).items())]
@@ -77,6 +78,7 @@ def plot_img(in_data_loder, save_path):
     for i, data in enumerate(in_data_loder):
         img = data['image']
         label = data['label']
+        caseID = data['CaseID']
         img_array = img.numpy()
         squeezed = np.squeeze(img_array)
         plt.figure(figsize=(15, 5))
@@ -93,13 +95,14 @@ def plot_img(in_data_loder, save_path):
         plt.subplot(1, 3, 3)
         plt.imshow(squeezed[:, :, 64], cmap="gray")
 
-        plt.title(f'Image{i}, label: {label.item()}')
-        plt.savefig(f'{save_path}image{i}.png')
-        plt.show()
+        plt.title(f'{caseID}, label: {label.item()}')
+        plt.savefig(f'{save_path}{caseID}.png')
+        # plt.show()
 
 
 def main():
     # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/'
+    # val_img_save_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/val_images/'
     data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v2/'
     train_img_save_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/train_images/'
     val_img_save_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/val_images/'
