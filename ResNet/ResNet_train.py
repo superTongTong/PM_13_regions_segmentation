@@ -5,7 +5,7 @@ import torch
 import numpy as np
 import os
 import random
-from torch.optim.lr_scheduler import StepLR, PolynomialLR
+from torch.optim.lr_scheduler import PolynomialLR
 import torch.optim as optim
 from dataloader import PCI_DataLoader
 from monai.transforms import Compose, EnsureType, Activations, AsDiscrete
@@ -15,6 +15,7 @@ from plot_results import plot_metrics
 from monai.data import decollate_batch
 import wandb
 from Loss_function import CombinedLoss
+from MedicalNet.MedicalNet import MedicalNet
 
 
 def seed_everything(seed):
@@ -27,10 +28,12 @@ def seed_everything(seed):
     torch.backends.cudnn.deterministic = True
 
 
-def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterion, optimizer, scheduler, post_label, post_pred, auc_metric, device):
-    # Log gradients and model parameters
-    wandb.watch(model)
-    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterion,
+                 optimizer, scheduler, post_label, post_pred, auc_metric, device, enable_wandb=False):
+    if enable_wandb:
+        #Log gradients and model parameters
+        wandb.watch(model)
+
     best_metric = -1
     best_metric_epoch = -1
     train_loss_list = []
@@ -106,37 +109,40 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
                         epoch + 1, acc_metric,  best_metric, best_metric_epoch
                     )
                 )
-                # Log metrics to wandb
-                wandb.log(
-                    {"Learning Rate": optimizer.param_groups[0]['lr'], "Train Loss": epoch_loss,
-                     "Validation Loss": val_loss, "AUC": auc_result, "Accuracy": acc_metric})
+                if enable_wandb:
+                    # Log metrics to wandb
+                    wandb.log(
+                        {"Learning Rate": optimizer.param_groups[0]['lr'], "Train Loss": epoch_loss,
+                         "Validation Loss": val_loss, "AUC": auc_result, "Accuracy": acc_metric})
         # # plot and save train and val loss curve, accuracy curve
         # os.makedirs(save_dir, exist_ok=True)
         # plot_metrics(train_loss_list, val_loss_list, acc_values, save_path=save_dir)
         print(f"train completed, best_metric: {best_metric:.4f} at epoch: {best_metric_epoch}")
 
 
-def mian():
-    # Log in to wandb
-    wandb.login(key='f20a2a6646a45224f8e867aa0c94a51efb8eed99')
-    # Initialize wandb
-    run = wandb.init(project="my-project", name="mficb_lr9e-5_batch32_datasetv2_widen2_freeze_layer1_layer2")
+def mian(enable_wandb=False):
+    if enable_wandb:
+        # Log in to wandb
+        wandb.login(key='f20a2a6646a45224f8e867aa0c94a51efb8eed99')
+        # Initialize wandb
+        run = wandb.init(project="PCI_classification_MedicalNet", name="MedicalNet_lr9e-5_batch16_datasetv5_no_freeze")
     # specify all the directories
     # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/'
     # save_plot_dir = "C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/plot/"
-    #
-    # # pretrain = torch.load(
-    # #     "C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
+
+    # pretrain = torch.load(
+    #     "C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
     #
     # pretrain = torch.load(
     #     "C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/model_weights.torch")
     #
-    data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v2/'
+    data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v5/'
+    pretrained_model = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth'
     # save_plot_dir = "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/loss_acc_plot_mfcib/"
     # pretrain = torch.load(
     #     "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
-    pretrain = torch.load(
-        "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/model_weights.torch")
+    # pretrain = torch.load(
+    #     "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/model_weights.torch")
     # implment loss function here
 
     # set hyperparameters
@@ -150,37 +156,41 @@ def mian():
     seed_everything(seed)
 
     #set model
-    model = nets.resnet50(
-        pretrained=False,
-        n_input_channels=1,
-        widen_factor=2,
-        conv1_t_stride=2,
-        num_classes=num_classes
-    )
+    # model = nets.resnet50(
+    #     pretrained=False,
+    #     n_input_channels=1,
+    #     widen_factor=2,
+    #     conv1_t_stride=2,
+    #     num_classes=num_classes
+    # )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # print(model)
     # load pretrain model
     # pretrain['state_dict'] = {k.replace("module.", ""): v for k, v in pretrain['state_dict'].items()}
+    # model.to(device)
+    # model.load_state_dict(pretrain, strict=False)
+    # print("load pretrain model")
+    # # freeze the model
+    # for name, parameter in model.named_parameters():
+    #     if 'layer1' in name:
+    #         print(f"parameter '{name}' will be frozen")
+    #         parameter.requires_grad = False
+    #     elif 'layer2' in name:
+    #         print(f"parameter '{name}' will be frozen")
+    #         parameter.requires_grad = False
+    #     else:
+    #         print(f"parameter '{name}' will not be frozen")
+    #         parameter.requires_grad = True
+    '''load MedicalNet model '''
+    model = MedicalNet(path_to_weights=pretrained_model, device=device, sample_input_D=128,
+                       sample_input_H=128, sample_input_W=128, num_classes=num_classes)
+    print("load MedicalNet model")
+    # print(model)
     model.to(device)
-    model.load_state_dict(pretrain, strict=False)
-    print("load pretrain model")
-    # freeze the model
-    for name, parameter in model.named_parameters():
-        if 'layer1' in name:
-            print(f"parameter '{name}' will be frozen")
-            parameter.requires_grad = False
-        elif 'layer2' in name:
-            print(f"parameter '{name}' will be frozen")
-            parameter.requires_grad = False
-        else:
-            print(f"parameter '{name}' will not be frozen")
-            parameter.requires_grad = True
-
-
     # prepare dataloader
     train_loader, _ = PCI_DataLoader(data_dir, batch_size=batch_size, shuffle=False,
-                                     split='train', spatial_size=(128, 128, 128), p_gaussianNoise=0.3, p_Smooth=0.3,
-                                     p_Rotate=0.8, p_Contrast=0.8, p_Zoom=0.5, num_workers=2, use_sampler=True)
+                                     split='train', spatial_size=(128, 128, 128), p_gaussianNoise=0.1, p_Smooth=0.1,
+                                     p_Rotate=0.5, p_Contrast=0.5, p_Zoom=0.3, num_workers=2, use_sampler=True)
 
     val_loader, _ = PCI_DataLoader(data_dir, batch_size=1, shuffle=False,
                                    split='validation', spatial_size=(128, 128, 128), num_workers=2, use_sampler=False)
@@ -205,12 +215,14 @@ def mian():
     # metric
     auc_metric = ROCAUCMetric()
     ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterion,
-                 optimizer, scheduler, post_label, post_pred, auc_metric, device)
+                 optimizer, scheduler, post_label, post_pred, auc_metric, device, enable_wandb=enable_wandb)
 
 
 if __name__ == '__main__':
     start = time.time()
-    mian()
+    enable_wandb = True
+    mian(enable_wandb=enable_wandb)
     # Finish the wandb run
-    wandb.finish()
+    if enable_wandb:
+        wandb.finish()
     print('Elapsed time: {}'.format(time.time() - start))
