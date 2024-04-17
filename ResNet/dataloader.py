@@ -80,31 +80,33 @@ def plot_img(in_data_loder, save_path):
         label = data['label']
         caseID = data['CaseID']
         # check if the csaeID already exists in the save_path
-        if os.path.exists(f'{save_path}{caseID}.png'):
-            print(f'{caseID}.png already exists in {save_path}')
-            continue
-        else:
-            img_array = img.numpy()
-            squeezed = np.squeeze(img_array)
-            plt.figure(figsize=(15, 5))
 
-            # Plot the first image
-            plt.subplot(1, 3, 1)
-            plt.imshow(squeezed[64, :, :], cmap="gray")
+        img_array = img.numpy()
+        squeezed = np.squeeze(img_array)
+        plt.figure(figsize=(15, 5))
 
-            # Plot the second image
-            plt.subplot(1, 3, 2)
-            plt.imshow(squeezed[:, 64, :], cmap="gray")
+        # Plot the first image
+        plt.subplot(1, 3, 1)
+        plt.imshow(squeezed[64, :, :], cmap="gray")
 
-            # Plot the third image
-            plt.subplot(1, 3, 3)
-            plt.imshow(squeezed[:, :, 64], cmap="gray")
+        # Plot the second image
+        plt.subplot(1, 3, 2)
+        plt.imshow(squeezed[:, 64, :], cmap="gray")
 
-            plt.title(f'{caseID}, label: {label.item()}')
-            plt.savefig(f'{save_path}{caseID}.png')
-            print(f'processed {caseID}.png')
-            plt.close()
-            # plt.show()
+        # Plot the third image
+        plt.subplot(1, 3, 3)
+        plt.imshow(squeezed[:, :, 64], cmap="gray")
+
+        plt.title(f'{caseID}, label: {label.item()}')
+        # Check if the file already exists and increment a counter until a unique filename is found
+        counter = 0
+        while os.path.exists(f'{save_path}{caseID}_{counter}.png'):
+            counter += 1
+
+        plt.savefig(f'{save_path}{caseID}_{counter}.png')
+        print(f'processed {caseID}_{counter}.png')
+        plt.close()
+        # plt.show()
 
 
 def main():
@@ -112,19 +114,19 @@ def main():
     # val_img_save_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/val_images/'
     data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v2/'
     train_img_save_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/train_images/'
-    val_img_save_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/val_images/'
+    # val_img_save_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/val_images/'
     os.makedirs(train_img_save_dir, exist_ok=True)
-    os.makedirs(val_img_save_dir, exist_ok=True)
+    # os.makedirs(val_img_save_dir, exist_ok=True)
 
     train_loader, _ = PCI_DataLoader(data_dir, batch_size=1, shuffle=False, split='train',
                                      spatial_size=(128, 128, 128),
                                      p_gaussianNoise=0.3, p_Smooth=0.3, p_Rotate=0.9,
                                      p_Contrast=0.9, p_Zoom=0.5, num_workers=2, use_sampler=True)
-    val_loader, _ = PCI_DataLoader(data_dir, batch_size=1, shuffle=False, split='validation',
-                                   spatial_size=(128, 128, 128),
-                                   num_workers=2, use_sampler=False)
+    # val_loader, _ = PCI_DataLoader(data_dir, batch_size=1, shuffle=False, split='validation',
+    #                                spatial_size=(128, 128, 128),
+    #                                num_workers=2, use_sampler=False)
     plot_img(train_loader, train_img_save_dir)
-    plot_img(val_loader, val_img_save_dir)
+    # plot_img(val_loader, val_img_save_dir)
 
 
 if __name__ == '__main__':
