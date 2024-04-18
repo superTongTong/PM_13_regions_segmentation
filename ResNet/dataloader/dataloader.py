@@ -5,40 +5,7 @@ import torch
 from monai.data import CacheDataset, DataLoader
 from torch.utils.data.sampler import WeightedRandomSampler
 from collections import Counter
-from monai.transforms import Compose, LoadImaged, EnsureChannelFirstd, Orientationd, Resized, ToTensord, RandGaussianNoised, RandGaussianSmoothd, RandZoomd, RandRotated, RandAdjustContrastd
-
-def pci_transform_train(spatial_size=(128, 128, 128), p_gaussianNoise=0.3, p_Smooth=0.3, p_Rotate=0.9, p_Contrast=0.9, p_Zoom=0.5):
-    return Compose([
-        # intensity normalization is done in the data pre-processing step
-        LoadImaged(keys=["image"]),
-        EnsureChannelFirstd(keys=["image"]),
-        Orientationd(keys=["image"], axcodes="RAS"),
-        Resized(keys=["image"], spatial_size=spatial_size),
-        # RandGaussianNoised(keys=["image"], prob=p_gaussianNoise, mean=0.0, std=0.1),
-        # RandGaussianSmoothd(keys=["image"], prob=p_Smooth, sigma_x=(0.5, 1.5),
-        #                     sigma_y=(0.5, 1.5), sigma_z=(0.5, 1.5), approx='erf'),
-        RandZoomd(keys=["image"], min_zoom=0.9, max_zoom=1.5, mode=("area",), prob=p_Zoom),
-        RandRotated(keys=["image"],
-                    range_x=(-30. / 360 * 2. * np.pi, 30. / 360 * 2. * np.pi),
-                    range_y=(-30. / 360 * 2. * np.pi, 30. / 360 * 2. * np.pi),
-                    range_z=(-30. / 360 * 2. * np.pi, 30. / 360 * 2. * np.pi),
-                    mode=("bilinear",) * len(["image"]),
-                    align_corners=(True,) * len(["image"]),
-                    padding_mode=("border",),
-                    prob=p_Rotate),
-        RandAdjustContrastd(keys=["image"], gamma=(0.7, 1.5), prob=p_Contrast),
-        ToTensord(keys=["image"]),
-    ])
-
-def pci_transform_val(spatial_size=(128, 128, 128)):
-    return Compose([
-        LoadImaged(keys=["image"]),
-        EnsureChannelFirstd(keys=["image"]),
-        Orientationd(keys=["image"], axcodes="RAS"),
-        Resized(keys=["image"], spatial_size=spatial_size),
-        ToTensord(keys=["image"]),
-    ])
-
+from transforms import pci_transform_train, pci_transform_val
 
 def get_data_list(data_dir, split='train'):
 
@@ -57,11 +24,19 @@ def get_data_list(data_dir, split='train'):
 
 
 def PCI_DataLoader(data_dir, batch_size=1, shuffle=True, split='train', spatial_size=(128, 128, 128), num_workers=2,
-                   p_gaussianNoise=0.1, p_Smooth=0.1, p_Rotate=0.5, p_Contrast=0.5, p_Zoom=0.5, use_sampler=True):
+                   p_gaussianNoise=0.1, p_Smooth=0.1, p_Rotate=0.5, p_Contrast=0.5, p_flip=0.5, use_sampler=True):
     imgs, labels, caseID = get_data_list(data_dir, split=split)
     data_files = [{"image": i, "label": l, "CaseID": id} for i, l, id in zip(imgs, labels, caseID)]
-    transforms = pci_transform_train(spatial_size=spatial_size, p_gaussianNoise=p_gaussianNoise, p_Smooth=p_Smooth,
-                                     p_Rotate=p_Rotate, p_Contrast=p_Contrast, p_Zoom=p_Zoom) if split == 'train' else pci_transform_val(spatial_size=spatial_size)
+    if split == 'train':
+        transforms = pci_transform_train(r1r3_key=[],
+                                         l123_keys=[],
+                                         all_keys=[],
+                                         spatial_size=spatial_size, p_gaussianNoise=p_gaussianNoise,
+                                         p_smooth=p_Smooth,
+                                         p_rotate=p_Rotate, p_contrast=p_Contrast, p_flip=p_flip)
+    elif split == 'validation':
+        transforms = pci_transform_val(all_keys=[], spatial_size=spatial_size)
+
     class_counts = [count for num, count in sorted(Counter(labels).items())]
     num_samples = sum(class_counts)
     class_weights = [num_samples / class_count for class_count in class_counts]

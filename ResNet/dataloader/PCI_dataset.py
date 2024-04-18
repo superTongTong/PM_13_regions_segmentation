@@ -1,11 +1,13 @@
 import torch
-from torch.utils import data
+from torch.utils.data import Dataset
 import os
 import torch.nn.functional as F
 import numpy as np
 import matplotlib.pyplot as plt
+from transforms import pci_transform_train, pci_transform_val
 
-class PCI_Dataset(data.Dataset):
+
+class PCI_Dataset(Dataset):
     def __init__(self,
                  data_dir: str,
                  split: str = 'train',
@@ -25,7 +27,6 @@ class PCI_Dataset(data.Dataset):
         # filenames
         self.file_names = sorted(os.listdir(self.data_dir_img))
         self.n_files = len(self.file_names)
-        # self.n_cases = self.n_files // (155 * 5)
         print('Number of scans: {}'.format(self.n_files))
 
         # get the list of all the cases (example=s0007_0001_R1_3) we only need 'sxxxx_xxxx_Rx'
@@ -43,9 +44,8 @@ class PCI_Dataset(data.Dataset):
         # img = self.transform(img_path[idx])
 
         label = int(self.file_names[idx][14:15])
-        y_in = torch.tensor(label)
-        y_one_hot = F.one_hot(y_in, num_classes=4)
-        data_files = {"image": img_path, "label": y_one_hot}
+
+        data_files = {"image": img_path, "label": label}
 
         return data_files
 

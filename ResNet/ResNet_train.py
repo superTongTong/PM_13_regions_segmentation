@@ -7,14 +7,12 @@ import os
 import random
 from torch.optim.lr_scheduler import PolynomialLR
 import torch.optim as optim
-from dataloader import PCI_DataLoader
+from dataloader.dataloader import PCI_DataLoader
 from monai.transforms import Compose, EnsureType, Activations, AsDiscrete
 from monai.metrics import ROCAUCMetric
 import time
-from plot_results import plot_metrics
 from monai.data import decollate_batch
 import wandb
-from Loss_function import CombinedLoss
 from MedicalNet.MedicalNet import MedicalNet
 
 
@@ -207,7 +205,7 @@ def mian(enable_wandb=False):
     # criterion = CombinedLoss(alpha=1, gamma=2, weight=None)
 
     # optimizer
-    optimizer = optim.AdamW(model.parameters(), lr=lr)
+    optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-7)
     # optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=1e-4)
 
     # scheduler
