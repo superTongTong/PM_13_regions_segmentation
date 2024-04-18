@@ -5,26 +5,30 @@ import torch
 from monai.data import CacheDataset, DataLoader
 from torch.utils.data.sampler import WeightedRandomSampler
 from collections import Counter
-from monai.transforms import Compose, LoadImaged, EnsureChannelFirstd, Orientationd, Resized, ToTensord, RandGaussianNoised, RandGaussianSmoothd, RandZoomd, RandRotated, RandAdjustContrastd
+from monai.transforms import (Compose, LoadImaged, EnsureChannelFirstd, Orientationd, Resized, ToTensord,
+                              RandGaussianNoised, RandGaussianSmoothd, RandZoomd,
+                              RandRotated, RandAdjustContrastd, RandFlipd, RandScaleCropd)
 
-def pci_transform_train(spatial_size=(128, 128, 128), p_gaussianNoise=0.3, p_Smooth=0.3, p_Rotate=0.9, p_Contrast=0.9, p_Zoom=0.5):
+def pci_transform_train(spatial_size=(128, 128, 128), p_gaussianNoise=0.3, p_Smooth=0.3, p_Rotate=0.9, p_Contrast=0.9, p_flip=0.5):
     return Compose([
         # intensity normalization is done in the data pre-processing step
         LoadImaged(keys=["image"]),
         EnsureChannelFirstd(keys=["image"]),
         Orientationd(keys=["image"], axcodes="RAS"),
         Resized(keys=["image"], spatial_size=spatial_size),
-        # RandGaussianNoised(keys=["image"], prob=p_gaussianNoise, mean=0.0, std=0.1),
-        # RandGaussianSmoothd(keys=["image"], prob=p_Smooth, sigma_x=(0.5, 1.5),
-        #                     sigma_y=(0.5, 1.5), sigma_z=(0.5, 1.5), approx='erf'),
-        RandZoomd(keys=["image"], min_zoom=0.9, max_zoom=1.5, mode=("area",), prob=p_Zoom),
-        RandRotated(keys=["image"],
-                    range_x=(-30. / 360 * 2. * np.pi, 30. / 360 * 2. * np.pi),
+        RandGaussianNoised(keys=["image"], prob=p_gaussianNoise, mean=0.3, std=0.1),
+        RandGaussianSmoothd(keys=["image"], prob=p_Smooth, sigma_x=(0.5, 1.5),
+                            sigma_y=(0.5, 1.5), sigma_z=(0.5, 1.5), approx='erf'),
+        RandFlipd(keys=["image"], spatial_axis=[0], prob=p_flip),
+        RandFlipd(keys=["image"], spatial_axis=[1], prob=p_flip),
+        RandFlipd(keys=["image"], spatial_axis=[2], prob=p_flip),
+        # RandScaleCropd(keys=["image"], roi_scale=(0.8, 1.2), max_roi_scale=(1.2, 1.2), random_center=True, lazy=False),
+        RandRotated(keys=["image"], range_x=(-30. / 360 * 2. * np.pi, 30. / 360 * 2. * np.pi),
                     range_y=(-30. / 360 * 2. * np.pi, 30. / 360 * 2. * np.pi),
                     range_z=(-30. / 360 * 2. * np.pi, 30. / 360 * 2. * np.pi),
-                    mode=("bilinear",) * len(["image"]),
-                    align_corners=(True,) * len(["image"]),
-                    padding_mode=("border",),
+                    mode=("bilinear"),
+                    align_corners=(True),
+                    padding_mode=("zeros"),
                     prob=p_Rotate),
         RandAdjustContrastd(keys=["image"], gamma=(0.7, 1.5), prob=p_Contrast),
         ToTensord(keys=["image"]),
@@ -57,11 +61,11 @@ def get_data_list(data_dir, split='train'):
 
 
 def PCI_DataLoader(data_dir, batch_size=1, shuffle=True, split='train', spatial_size=(128, 128, 128), num_workers=2,
-                   p_gaussianNoise=0.1, p_Smooth=0.1, p_Rotate=0.5, p_Contrast=0.5, p_Zoom=0.5, use_sampler=True):
+                   p_gaussianNoise=0.1, p_Smooth=0.1, p_Rotate=0.5, p_Contrast=0.5, p_flip=0.5, use_sampler=True):
     imgs, labels, caseID = get_data_list(data_dir, split=split)
     data_files = [{"image": i, "label": l, "CaseID": id} for i, l, id in zip(imgs, labels, caseID)]
     transforms = pci_transform_train(spatial_size=spatial_size, p_gaussianNoise=p_gaussianNoise, p_Smooth=p_Smooth,
-                                     p_Rotate=p_Rotate, p_Contrast=p_Contrast, p_Zoom=p_Zoom) if split == 'train' else pci_transform_val(spatial_size=spatial_size)
+                                     p_Rotate=p_Rotate, p_Contrast=p_Contrast, p_flip=p_flip) if split == 'train' else pci_transform_val(spatial_size=spatial_size)
     class_counts = [count for num, count in sorted(Counter(labels).items())]
     num_samples = sum(class_counts)
     class_weights = [num_samples / class_count for class_count in class_counts]
@@ -111,17 +115,17 @@ def plot_img(in_data_loder, save_path):
 
 def main():
     # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/'
-    # val_img_save_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/val_images/'
-    data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v2/'
-    train_img_save_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/train_images_v2/'
+    # train_img_save_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/train_images_v2/'
+    data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v5/'
+    train_img_save_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/train_images_dsv5/'
     # val_img_save_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/val_images/'
     os.makedirs(train_img_save_dir, exist_ok=True)
     # os.makedirs(val_img_save_dir, exist_ok=True)
 
     train_loader, _ = PCI_DataLoader(data_dir, batch_size=1, shuffle=False, split='train',
                                      spatial_size=(128, 128, 128),
-                                     p_gaussianNoise=0.3, p_Smooth=0.3, p_Rotate=0.9,
-                                     p_Contrast=0.9, p_Zoom=0.5, num_workers=2, use_sampler=True)
+                                     p_gaussianNoise=0.5, p_Smooth=0, p_Rotate=0.9,
+                                     p_Contrast=0.9, p_flip=0.5, num_workers=2, use_sampler=True)
     # val_loader, _ = PCI_DataLoader(data_dir, batch_size=1, shuffle=False, split='validation',
     #                                spatial_size=(128, 128, 128),
     #                                num_workers=2, use_sampler=False)
