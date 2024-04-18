@@ -1,10 +1,16 @@
-import torch
 from torch.utils.data import Dataset
 import os
-import torch.nn.functional as F
 import numpy as np
 import matplotlib.pyplot as plt
+import torch
+from monai.transforms import LoadImaged
 from transforms import pci_transform_train, pci_transform_val
+
+# Define keys for loading images
+keys = ['cls0', 'cls1', 'cls2', 'cls3']
+
+# Define transform for loading images
+load_images = LoadImaged(keys)
 
 
 class PCI_Dataset(Dataset):
@@ -37,25 +43,49 @@ class PCI_Dataset(Dataset):
     def __len__(self):
         return self.n_files
 
-    def __getitem__(self,
-                    idx: int):
-
-        img_path = os.path.join(self.data_dir_img, self.file_names[idx])
-        # img = self.transform(img_path[idx])
-
+    def __getitem__(self, idx: int):
+        img_dict = {}
         label = int(self.file_names[idx][14:15])
+        img_path = os.path.join(self.data_dir_img, self.file_names[idx])
 
-        data_files = {"image": img_path, "label": label}
+        # Update img_dict with image paths
+        if label == 0:
+            img_dict.update({'cls0': img_path})
+        elif label == 1:
+            img_dict.update({'cls1': img_path})
+        elif label == 2:
+            img_dict.update({'cls2': img_path})
+        elif label == 3:
+            img_dict.update({'cls3': img_path})
+        else:
+            print('label not found')
 
-        return data_files
+        # Load images as tensors
+        img_dict = load_images(img_dict)
+
+        if self.transform is not None:
+            img_dict = self.transform(img_dict)
+
+        # Check if all images are loaded and have the same shape
+        for key in keys:
+            if key not in img_dict or img_dict[key].shape != img_dict[keys[0]].shape:
+                raise ValueError(f"Image {key} not loaded correctly")
+
+        # Concatenate images along dimension 0
+        data = torch.cat([img_dict[key] for key in keys], dim=0)
+
+        return data, label
 
 
 def test():
-    data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan/'
+    data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/'
     # mask_dir = 'data/data_ViT/masks'
-    dataset = PCI_Dataset(data_dir, split='validation')
+    train_transform = pci_transform_train(all_key=['cls0', 'cls1', 'cls2', 'cls3'], cls123_key=['cls1', 'cls2', 'cls3'],)
+    # val_transform = pci_transform_val(all_key=['cls0', 'cls1', 'cls2', 'cls3'], cls123_key=['cls1', 'cls2', 'cls3'],)
+    train_set = PCI_Dataset(data_dir, split='train', transform=train_transform)
+    # val_set = PCI_Dataset(data_dir, split='validation', transform=val_transform)
 
-    for i, data in enumerate(dataset):
+    for data, label in enumerate(train_set):
         img = data[0]
         # img = img['image']
         img_array = img.numpy()
@@ -64,6 +94,7 @@ def test():
         plt.title("image")
         plt.imshow(sqzzed[:, :, 30], cmap="gray")
         plt.show()
+        plt.close()
 
 
 if __name__ == '__main__':

@@ -8,11 +8,9 @@ class BaseDataLoader(DataLoader):
     """
     Base class for all data loaders
     """
-    def __init__(self, dataset, batch_size, shuffle, validation_split, num_workers, prefetch_factor, collate_fn=default_collate):
+    def __init__(self, dataset, batch_size, validation_split, num_workers, prefetch_factor, collate_fn=default_collate):
         self.validation_split = validation_split
-        self.shuffle = shuffle
         self.prefetch_factor = prefetch_factor
-
         self.batch_idx = 0
         self.n_samples = len(dataset)
 
