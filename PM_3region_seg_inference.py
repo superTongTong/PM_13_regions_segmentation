@@ -25,9 +25,12 @@ def get_3_region_masks():
     nnUNet_raw = os.environ.get('nnUNet_raw')
     # nnUNet_preprocessed = os.environ.get('nnUNet_preprocessed')
     nnUNet_results = os.environ.get('nnUNet_results')
-    pretrained_path = Path('Dataset017_Resampled_nn_scratch/nnUNetTrainer_500epochs2024_3_23_13_55')
-    i_path = Path('/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/raw_data/')
-    o_path = Path('/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/masks')
+    pretrained_path = Path('Dataset008_CKI_orig/finetune_500epochs2024_1_30_10_33')
+    i_path = Path('/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/test_data/')
+    o_path = Path('/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/masks_v2')
+    # pretrained_path = Path('Dataset008_CKI_orig/finetune_500epochs2024_1_30_10_33')
+    # i_path = './data/data_ViT/images/val/'
+    # o_path = './data/data_ViT/masks_v2'
     pretrained_model_path = os.path.join(nnUNet_results, pretrained_path)
     # input_path = os.path.join(nnUNet_raw, i_path)
     # output_path = os.path.join(nnUNet_raw, o_path)
@@ -49,7 +52,7 @@ def get_3_region_masks():
     predictor.predict_from_files(i_path,
                                  o_path,
                                  save_probabilities=False, overwrite=False,
-                                 num_processes_preprocessing=12, num_processes_segmentation_export=12,
+                                 num_processes_preprocessing=6, num_processes_segmentation_export=6,
                                  folder_with_segs_from_prev_stage=None, num_parts=1, part_id=0)
 
 
