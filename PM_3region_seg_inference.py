@@ -52,7 +52,7 @@ def get_3_region_masks():
     predictor.predict_from_files(i_path,
                                  o_path,
                                  save_probabilities=False, overwrite=False,
-                                 num_processes_preprocessing=6, num_processes_segmentation_export=6,
+                                 num_processes_preprocessing=3, num_processes_segmentation_export=3,
                                  folder_with_segs_from_prev_stage=None, num_parts=1, part_id=0)
 
 
