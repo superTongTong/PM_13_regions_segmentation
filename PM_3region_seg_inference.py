@@ -26,7 +26,7 @@ def get_3_region_masks():
     # nnUNet_preprocessed = os.environ.get('nnUNet_preprocessed')
     nnUNet_results = os.environ.get('nnUNet_results')
     pretrained_path = Path('Dataset008_CKI_orig/finetune_500epochs2024_1_30_10_33')
-    i_path = Path('/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/test_data/')
+    i_path = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/test_data/'
     o_path = Path('/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/masks_v2')
     # pretrained_path = Path('Dataset008_CKI_orig/finetune_500epochs2024_1_30_10_33')
     # i_path = './data/data_ViT/images/val/'
