@@ -4,8 +4,32 @@ import os
 import torch.nn.functional as F
 import numpy as np
 import matplotlib.pyplot as plt
+from monai.data import CacheDataset
+from torch.utils.data import Dataset
 
-class PCI_Dataset(data.Dataset):
+
+class CustomDataset(Dataset):
+    def __init__(self, data_files, transform1, transform2):
+        self.data_files = data_files
+        self.transform1 = transform1
+        self.transform2 = transform2
+
+    def __len__(self):
+        return len(self.data_files)
+
+    def __getitem__(self, idx):
+        data_file = self.data_files[idx]
+        label = data_file["label"]
+
+        if label == 0:
+            image = self.transform2(data_file)
+        else:
+            image = self.transform1(data_file)
+
+        return image, label
+
+
+class PCI_Dataset(CacheDataset):
     def __init__(self,
                  data_dir: str,
                  split: str = 'train',
