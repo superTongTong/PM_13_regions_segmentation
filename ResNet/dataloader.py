@@ -19,10 +19,9 @@ def pci_transform_train(spatial_size=(128, 128, 128), p_gaussianNoise=0.3, p_Smo
         # RandGaussianNoised(keys=["image"], prob=p_gaussianNoise, mean=0.3, std=0.1),
         # RandGaussianSmoothd(keys=["image"], prob=p_Smooth, sigma_x=(0.5, 1.5),
         #                     sigma_y=(0.5, 1.5), sigma_z=(0.5, 1.5), approx='erf'),
-        RandFlipd(keys=["image"], spatial_axis=[0], prob=p_flip),
-        RandFlipd(keys=["image"], spatial_axis=[1], prob=p_flip),
-        RandFlipd(keys=["image"], spatial_axis=[2], prob=p_flip),
+
         # RandScaleCropd(keys=["image"], roi_scale=(0.8, 1.2), max_roi_scale=(1.2, 1.2), random_center=True),
+        RandAdjustContrastd(keys=["image"], gamma=(0.9, 1.2), prob=p_Contrast),
         RandRotated(keys=["image"],
                     range_x=15. / 360 * 2. * np.pi,
                     range_y=15. / 360 * 2. * np.pi,
@@ -31,8 +30,9 @@ def pci_transform_train(spatial_size=(128, 128, 128), p_gaussianNoise=0.3, p_Smo
                     align_corners=(True),
                     padding_mode=("zeros"),
                     prob=p_Rotate),
-        RandAdjustContrastd(keys=["image"], gamma=(0.9, 1.2), prob=p_Contrast),
-
+        RandFlipd(keys=["image"], spatial_axis=[0], prob=p_flip),
+        RandFlipd(keys=["image"], spatial_axis=[1], prob=p_flip),
+        RandFlipd(keys=["image"], spatial_axis=[2], prob=p_flip),
         ToTensord(keys=["image"]),
     ])
 
