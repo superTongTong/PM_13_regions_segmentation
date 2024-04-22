@@ -54,7 +54,7 @@ def get_3_region_masks():
                                  save_probabilities=False, overwrite=False,
                                  num_processes_preprocessing=3, num_processes_segmentation_export=3,
                                  folder_with_segs_from_prev_stage=None, num_parts=1, part_id=0)
-
+    # apply post-processing.
 
 def mian():
 
