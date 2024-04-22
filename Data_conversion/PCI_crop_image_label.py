@@ -83,22 +83,22 @@ def crop_based_mask(ct_image_path, seg_mask_path, idx):
 
 def mian():
     # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/images'
-    # mask_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/masks'
-    # save_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test'
+    # mask_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/masks_v2'
+    # save_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test_v2'
     # csv_path = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/PCI_3_regions_new.csv'
     data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/raw_data/'
     mask_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/masks/'
-    save_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v2'
+    save_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan'
     csv_path = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/PCI_3_regions_new.csv'
     # random_seed = 42
     df = pd.read_csv(csv_path)
     train_dir = os.path.join(data_dir, 'train')
-    val_data_dir = os.path.join(data_dir, 'val')
+    # val_data_dir = os.path.join(data_dir, 'val')
     # train_list, valid_list = train_test_split(img_list,
     #                                           test_size=0.2,
     #                                           random_state=random_seed)
     train_list = os.listdir(train_dir)
-    valid_list = os.listdir(val_data_dir)
+    # valid_list = os.listdir(val_data_dir)
 
     for img_name in train_list:
         print('-'*10)
@@ -125,33 +125,33 @@ def mian():
                 name = img_name.split('.')[0]
                 sitk.WriteImage(crop_img, f"{save_train_dir}/{name}_R{i}_{sc}.nii.gz")
             print('finish processing image:', img_name.split('.')[0])
-        # break
+        break
 
-    for img_name in valid_list:
-        print('-' * 10)
-        print('start processing image:', img_name.split('.')[0])
-        save_val_dir = os.path.join(save_dir, 'validation')
-        os.makedirs(save_val_dir, exist_ok=True)
-        processed_files_val = os.listdir(save_val_dir)
-        # if any files in the save_train_dir has the same caseID as the current image, skip the image
-        if len(processed_files_val) > 0 and any([img_name.split('_')[0] in file for file in processed_files_val]):
-            print('already processed image:', img_name.split('.')[0])
-            continue
-        else:
-            case_PCI = df[df['CaseID'] == img_name.split('.')[0]]
-
-            mask_d = img_name.replace('_0001', '')
-            mask_path = os.path.join(mask_dir, mask_d)
-            img_path = os.path.join(val_data_dir, img_name)
-
-            for i in range(1, 4):
-                region_score = case_PCI[f'R{i}'].values
-                sc = region_score[0]
-                crop_img = extract_roi_based_mask(img_path, mask_path, i)
-                name = img_name.split('.')[0]
-                sitk.WriteImage(crop_img, f"{save_val_dir}/{name}_R{i}_{sc}.nii.gz")
-            print('finish processing image:', img_name.split('.')[0])
-        # break
+    # for img_name in valid_list:
+    #     print('-' * 10)
+    #     print('start processing image:', img_name.split('.')[0])
+    #     save_val_dir = os.path.join(save_dir, 'validation')
+    #     os.makedirs(save_val_dir, exist_ok=True)
+    #     processed_files_val = os.listdir(save_val_dir)
+    #     # if any files in the save_train_dir has the same caseID as the current image, skip the image
+    #     if len(processed_files_val) > 0 and any([img_name.split('_')[0] in file for file in processed_files_val]):
+    #         print('already processed image:', img_name.split('.')[0])
+    #         continue
+    #     else:
+    #         case_PCI = df[df['CaseID'] == img_name.split('.')[0]]
+    #
+    #         mask_d = img_name.replace('_0001', '')
+    #         mask_path = os.path.join(mask_dir, mask_d)
+    #         img_path = os.path.join(val_data_dir, img_name)
+    #
+    #         for i in range(1, 4):
+    #             region_score = case_PCI[f'R{i}'].values
+    #             sc = region_score[0]
+    #             crop_img = extract_roi_based_mask(img_path, mask_path, i)
+    #             name = img_name.split('.')[0]
+    #             sitk.WriteImage(crop_img, f"{save_val_dir}/{name}_R{i}_{sc}.nii.gz")
+    #         print('finish processing image:', img_name.split('.')[0])
+    #     # break
 
 if __name__ == "__main__":
     mian()
