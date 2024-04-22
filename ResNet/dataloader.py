@@ -5,10 +5,8 @@ import torch
 from monai.data import CacheDataset, DataLoader
 from torch.utils.data.sampler import WeightedRandomSampler
 from collections import Counter
-from PCI_dataset import CustomCacheDataset
 from monai.transforms import (Compose, LoadImaged, EnsureChannelFirstd, Orientationd, Resized, ToTensord,
-                              RandGaussianNoised, RandGaussianSmoothd, RandZoomd,
-                              RandRotated, RandAdjustContrastd, RandFlipd, RandScaleCropd)
+                              RandRotated, RandAdjustContrastd, RandFlipd)
 
 def pci_transform_train(spatial_size=(128, 128, 128), p_Rotate=0.9, p_Contrast=0.9, p_flip=0.5):
     return Compose([
@@ -17,11 +15,6 @@ def pci_transform_train(spatial_size=(128, 128, 128), p_Rotate=0.9, p_Contrast=0
         EnsureChannelFirstd(keys=["image"]),
         Orientationd(keys=["image"], axcodes="RAS"),
         Resized(keys=["image"], spatial_size=spatial_size, mode=("trilinear")),
-        # RandGaussianNoised(keys=["image"], prob=p_gaussianNoise, mean=0.3, std=0.1),
-        # RandGaussianSmoothd(keys=["image"], prob=p_Smooth, sigma_x=(0.5, 1.5),
-        #                     sigma_y=(0.5, 1.5), sigma_z=(0.5, 1.5), approx='erf'),
-
-        # RandScaleCropd(keys=["image"], roi_scale=(0.8, 1.2), max_roi_scale=(1.2, 1.2), random_center=True),
         RandAdjustContrastd(keys=["image"], gamma=(0.9, 1.2), prob=p_Contrast),
         RandRotated(keys=["image"],
                     range_x=15. / 360 * 2. * np.pi,
