@@ -119,22 +119,22 @@ def plot_img(in_data_loder, save_path):
 
 
 def main():
-    data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/'
-    train_img_save_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/train_images_v2/'
-    # data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v5/'
-    # train_img_save_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/train_images_dsv5_all/'
-    # val_img_save_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/val_images/'
+    # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/'
+    # train_img_save_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/train_images_v2/'
+    data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v2/'
+    train_img_save_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/train_images_dsv2_all/'
+    val_img_save_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/val_images_dsv2_all/'
     os.makedirs(train_img_save_dir, exist_ok=True)
-    # os.makedirs(val_img_save_dir, exist_ok=True)
+    os.makedirs(val_img_save_dir, exist_ok=True)
 
     train_loader = PCI_DataLoader(data_dir, batch_size=1, shuffle=False, split='train',
-                                     spatial_size=(128, 128, 128),  p_Rotate=0.9,
-                                     p_Contrast=0.9, p_flip=0.9, num_workers=2, use_sampler=False)
-    # val_loader = PCI_DataLoader(data_dir, batch_size=1, shuffle=False, split='validation',
-    #                                spatial_size=(128, 128, 128),
-    #                                num_workers=2, use_sampler=False)
+                                  spatial_size=(128, 128, 128),  p_Rotate=0.9,
+                                  p_Contrast=0.9, p_flip=0.9, num_workers=2, use_sampler=False)
+    val_loader = PCI_DataLoader(data_dir, batch_size=1, shuffle=False, split='validation',
+                                spatial_size=(128, 128, 128),
+                                num_workers=2, use_sampler=False)
     plot_img(train_loader, train_img_save_dir)
-    # plot_img(val_loader, val_img_save_dir)
+    plot_img(val_loader, val_img_save_dir)
 
 
 if __name__ == '__main__':
