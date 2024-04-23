@@ -1,9 +1,10 @@
 from __future__ import print_function
+import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 import monai.networks.nets as nets
 from torch import nn
 import torch
 import numpy as np
-import os
 import random
 from torch.optim.lr_scheduler import PolynomialLR
 import torch.optim as optim
@@ -148,7 +149,7 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
 
 def mian(enable_wandb=False):
     project_name = "PCI_classification_MedicalNet"
-    run_name = "fmcib_lr5e-4_batch16_datasetv1_no_freeze"
+    run_name = "scratch_lr5e-4_batch16_datasetv2_no_freeze"
     if enable_wandb:
         # Log in to wandb
         wandb.login(key='f20a2a6646a45224f8e867aa0c94a51efb8eed99')
@@ -158,17 +159,17 @@ def mian(enable_wandb=False):
     # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/'
     # save_plot_dir = f"C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/plot/confusion_matrix_map/{run_name}"
     # pretrained_model = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth'
-    #
+
     # pretrain = torch.load(
     #     "C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/model_weights.torch")
-    #
+    # #
     data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v2/'
-    # pretrained_model = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth'
+    # # pretrained_model = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth'
     save_plot_dir = f"/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/confusion_matrix_map/{run_name}"
+    # # pretrain = torch.load(
+    # #     "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
     # pretrain = torch.load(
-    #     "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
-    pretrain = torch.load(
-        "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/model_weights.torch")
+    #     "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/model_weights.torch")
 
     # set hyperparameters
     batch_size = 16  #64 out of memory
@@ -188,12 +189,17 @@ def mian(enable_wandb=False):
         conv1_t_stride=2,
         num_classes=num_classes
     )
+    # initialize the model with He-initialization
+    for m in model.modules():
+        if isinstance(m, (nn.Conv3d, nn.Linear)):
+            nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+        print('initialize the model with He-initialization')
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # load pretrain model
     # pretrain['state_dict'] = {k.replace("module.", ""): v for k, v in pretrain['state_dict'].items()}
     model.to(device)
-    model.load_state_dict(pretrain, strict=False)
-    print("load pretrain weight from fmcib")
+    # model.load_state_dict(pretrain, strict=False)
+    # print("load pretrain weight from fmcib")
     # # freeze the model
     # for name, parameter in model.named_parameters():
     #     if 'layer1' in name:
