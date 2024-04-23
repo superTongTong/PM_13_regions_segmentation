@@ -117,9 +117,19 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
                     wandb.log(
                         {"Learning Rate": optimizer.param_groups[0]['lr'], "Train Loss": epoch_loss,
                          "Validation Loss": val_loss, "AUC": auc_result, "Accuracy": acc_metric})
-        # save confusion matrix every 10 epochs
+        # save confusion matrix the 1 first and then save every 10 epochs
+        os.makedirs(save_dir, exist_ok=True)
+        if epoch == 0 and save_dir is not None:
+            # Compute confusion matrix
+            cm = confusion_matrix(y.cpu().numpy(), y_pred.argmax(dim=1).cpu().numpy())
+            # Plot confusion matrix
+            plt.figure(figsize=(10, 10))
+            sns.heatmap(cm, annot=True, fmt="d")
+            plt.title("Confusion matrix")
+            plt.ylabel('True label')
+            plt.xlabel('Predicted label')
+            plt.savefig(f'{save_dir}/confusion_matrix_epoch_{epoch + 1}.png')
         if (epoch + 1) % 10 == 0 and save_dir is not None:
-            os.makedirs(save_dir, exist_ok=True)
             # Compute confusion matrix
             cm = confusion_matrix(y.cpu().numpy(), y_pred.argmax(dim=1).cpu().numpy())
             # Plot confusion matrix# Plot confusion matrix
@@ -137,27 +147,28 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
 
 
 def mian(enable_wandb=False):
+    project_name = "PCI_classification_MedicalNet"
+    run_name = "fmcib_lr5e-4_batch16_datasetv1_no_freeze"
     if enable_wandb:
         # Log in to wandb
         wandb.login(key='f20a2a6646a45224f8e867aa0c94a51efb8eed99')
         # Initialize wandb
-        run = wandb.init(project="PCI_classification_MedicalNet", name="MedicalNet_lr5e-4_batch16_datasetv1_no_freeze")
+        run = wandb.init(project=project_name, name=run_name)
     # specify all the directories
     # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/'
-    # save_plot_dir = "C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/plot/confusion_matrix_map/"
+    # save_plot_dir = f"C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/plot/confusion_matrix_map/{run_name}"
     # pretrained_model = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth'
     #
     # pretrain = torch.load(
     #     "C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/model_weights.torch")
     #
-    data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan/'
-    pretrained_model = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth'
-    save_plot_dir = "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/confusion_matrix_map/"
+    data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v2/'
+    # pretrained_model = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth'
+    save_plot_dir = f"/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/confusion_matrix_map/{run_name}"
     # pretrain = torch.load(
     #     "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
-    # pretrain = torch.load(
-    #     "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/model_weights.torch")
-    # implment loss function here
+    pretrain = torch.load(
+        "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/model_weights.torch")
 
     # set hyperparameters
     batch_size = 16  #64 out of memory
@@ -170,20 +181,19 @@ def mian(enable_wandb=False):
     seed_everything(seed)
 
     #set model
-    # model = nets.resnet50(
-    #     pretrained=False,
-    #     n_input_channels=1,
-    #     widen_factor=2,
-    #     conv1_t_stride=2,
-    #     num_classes=num_classes
-    # )
+    model = nets.resnet50(
+        pretrained=False,
+        n_input_channels=1,
+        widen_factor=2,
+        conv1_t_stride=2,
+        num_classes=num_classes
+    )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # print(model)
     # load pretrain model
     # pretrain['state_dict'] = {k.replace("module.", ""): v for k, v in pretrain['state_dict'].items()}
-    # model.to(device)
-    # model.load_state_dict(pretrain, strict=False)
-    # print("load pretrain model")
+    model.to(device)
+    model.load_state_dict(pretrain, strict=False)
+    print("load pretrain weight from fmcib")
     # # freeze the model
     # for name, parameter in model.named_parameters():
     #     if 'layer1' in name:
@@ -195,24 +205,21 @@ def mian(enable_wandb=False):
     #     else:
     #         print(f"parameter '{name}' will not be frozen")
     #         parameter.requires_grad = True
-    '''load MedicalNet model '''
-    model = MedicalNet(path_to_weights=pretrained_model, device=device, sample_input_D=128,
-                       sample_input_H=128, sample_input_W=128, num_classes=num_classes)
-    print("load MedicalNet model")
-    # print(model)
-    model.to(device)
+
+    # '''load MedicalNet model '''
+    # model = MedicalNet(path_to_weights=pretrained_model, device=device, sample_input_D=128,
+    #                    sample_input_H=128, sample_input_W=128, num_classes=num_classes)
+    # print("load MedicalNet model")
+    # model.to(device)
+
     # prepare dataloader
     train_loader = PCI_DataLoader(data_dir, batch_size=batch_size, shuffle=False,
                                      split='train', spatial_size=(128, 128, 128),
-                                     p_Rotate=1, p_Contrast=0.8, p_flip=0.9, num_workers=2, use_sampler=True)
+                                     p_Rotate=0.9, p_Contrast=0.5, p_flip=0.9, num_workers=2, use_sampler=True)
 
     val_loader = PCI_DataLoader(data_dir, batch_size=1, shuffle=False,
                                    split='validation', spatial_size=(128, 128, 128), num_workers=2, use_sampler=False)
 
-    # convert class weights to tensor
-
-    # class_weights_train = torch.tensor(class_weights_train, device=device)
-    # class_weights_val = torch.tensor(class_weights_val, device=device)
     post_pred = Compose([EnsureType(), Activations(softmax=True)])
     post_label = Compose([EnsureType(), AsDiscrete(to_onehot=num_classes, n_classes=num_classes)])
 
