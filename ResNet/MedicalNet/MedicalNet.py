@@ -6,6 +6,7 @@ from .resnet_base import resnet50
 class MedicalNet(nn.Module):
     def __init__(self, path_to_weights, device, sample_input_D=128, sample_input_H=128, sample_input_W=128, num_classes=4):
         super(MedicalNet, self).__init__()
+        self.num_classes = num_classes
         self.model = resnet50(sample_input_D=sample_input_D, sample_input_H=sample_input_H,
                               sample_input_W=sample_input_W, num_seg_classes=num_classes)
         self.model.conv_seg = nn.Sequential(
@@ -24,4 +25,10 @@ class MedicalNet(nn.Module):
 
     def forward(self, x):
         features = self.model(x)
-        return torch.sigmoid_(self.fc(features))
+        # return torch.sigmoid_(self.fc(features))
+        if self.num_classes == 2:
+            return torch.sigmoid_(self.fc(features))
+        elif self.num_classes == 4:
+            return torch.softmax_(self.fc(features))
+        else:
+            print("Number of classes must be 2 or 4. Current number of classes is ", self.num_classes)
