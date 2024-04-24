@@ -149,7 +149,7 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
 
 def mian(enable_wandb=False):
     project_name = "PCI_classification_MedicalNet"
-    run_name = "scratch_lr5e-4_batch16_datasetv2_no_freeze"
+    run_name = "scratch_lr5e-4_batch16_datasetv4_binary_classification"
     if enable_wandb:
         # Log in to wandb
         wandb.login(key='f20a2a6646a45224f8e867aa0c94a51efb8eed99')
@@ -163,7 +163,7 @@ def mian(enable_wandb=False):
     # pretrain = torch.load(
     #     "C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/model_weights.torch")
     # #
-    data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v2/'
+    data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v4/'
     # # pretrained_model = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth'
     save_plot_dir = f"/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/confusion_matrix_map/{run_name}"
     # # pretrain = torch.load(
@@ -178,7 +178,7 @@ def mian(enable_wandb=False):
     lr = 5e-4 # 3e-5
     gamma = 0.9
     seed = 42
-    num_classes = 4
+    num_classes = 2
     seed_everything(seed)
 
     #set model
@@ -229,7 +229,11 @@ def mian(enable_wandb=False):
     post_pred = Compose([EnsureType(), Activations(softmax=True)])
     post_label = Compose([EnsureType(), AsDiscrete(to_onehot=num_classes, n_classes=num_classes)])
 
-    criterion = nn.CrossEntropyLoss()
+    if num_classes == 2:
+        criterion = nn.BCELoss()
+    else:
+        criterion = nn.CrossEntropyLoss()
+
     # combine cross entropy loss with focal loss
     # criterion = CombinedLoss(alpha=1, gamma=2, weight=None)
 
