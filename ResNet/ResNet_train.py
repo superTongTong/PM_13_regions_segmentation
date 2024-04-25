@@ -56,7 +56,7 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
         for batch_data in train_loader:
             step += 1
             data, label = batch_data[0]["image"].to(device), batch_data[0]["label"].to(device)
-            # print('sampled data label:', label)
+            print('sampled data label:', label)
 
             # output = model(data.float())
             output = model(data.float()).squeeze()
@@ -84,12 +84,14 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
                     val_images, val_labels = val_data["image"].to(device), val_data["label"].to(device)
                     y_pred = torch.cat([y_pred, model(val_images)], dim=0)
                     y = torch.cat([y, val_labels], dim=0)
-                y_pred = y_pred.squeeze()
-                val_l = criterion(y_pred.float(), y.float())
+                # y_pred = y_pred.squeeze()
+                val_l = criterion(y_pred.squeeze().float(), y.float())
                 val_loss = val_l.item()
                 val_loss_list.append(val_loss)
                 print(f"epoch {epoch + 1} validation loss: {val_loss:.4f}")
-                acc_value = torch.eq(y_pred.argmax(dim=1), y)
+                dim = 0 if len(y_pred.shape) == 1 else 1
+                acc_value = torch.eq(y_pred.argmax(dim=dim), y)
+                # acc_value = torch.eq(y_pred.argmax(dim=1), y)
                 acc_metric = acc_value.sum().item() / len(acc_value)
                 acc_values.append(acc_metric)
                 y_onehot = [post_label(i) for i in decollate_batch(y)]
@@ -124,7 +126,11 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
         os.makedirs(save_dir, exist_ok=True)
         if epoch == 0 and save_dir is not None:
             # Compute confusion matrix
-            cm = confusion_matrix(y.cpu().numpy(), y_pred.argmax(dim=1).cpu().numpy())
+            print("Shape of y:", y.shape)
+            print("Shape of y_pred:", y_pred.shape)
+            dim = 0 if len(y_pred.shape) == 1 else 1
+            cm = confusion_matrix(y.cpu().numpy(), y_pred.argmax(dim=dim).cpu().numpy())
+            # cm = confusion_matrix(y.cpu().numpy(), y_pred.argmax(dim=1).cpu().numpy())
             # Plot confusion matrix
             plt.figure(figsize=(10, 10))
             sns.heatmap(cm, annot=True, fmt="d")
@@ -134,7 +140,9 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
             plt.savefig(f'{save_dir}/confusion_matrix_epoch_{epoch + 1}.png')
         if (epoch + 1) % 10 == 0 and save_dir is not None:
             # Compute confusion matrix
-            cm = confusion_matrix(y.cpu().numpy(), y_pred.argmax(dim=1).cpu().numpy())
+            dim = 0 if len(y_pred.shape) == 1 else 1
+            cm = confusion_matrix(y.cpu().numpy(), y_pred.argmax(dim=dim).cpu().numpy())
+            # cm = confusion_matrix(y.cpu().numpy(), y_pred.argmax(dim=1).cpu().numpy())
             # Plot confusion matrix# Plot confusion matrix
             plt.figure(figsize=(10, 10))
             sns.heatmap(cm, annot=True, fmt="d")
@@ -231,8 +239,8 @@ def mian(enable_wandb=False):
                                    split='validation', spatial_size=(128, 128, 128), num_workers=2, use_sampler=False)
 
     post_pred = Compose([EnsureType(), Activations(softmax=True)])
-    post_label = Compose([EnsureType(), AsDiscrete(to_onehot=num_classes, n_classes=num_classes)])
-
+    # post_label = Compose([EnsureType(), AsDiscrete(to_onehot=num_classes, n_classes=num_classes)])
+    post_label = Compose([EnsureType()])
     # criterion = nn.CrossEntropyLoss()
     criterion = nn.BCELoss()
 
