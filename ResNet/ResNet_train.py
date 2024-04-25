@@ -33,7 +33,8 @@ def seed_everything(seed):
 
 
 def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterion,
-                 optimizer, scheduler, post_label, post_pred, auc_metric, device, enable_wandb=False, save_dir=None):
+                 optimizer, scheduler, post_label, post_pred, auc_metric, device,
+                 enable_wandb=False, save_dir=None, binary_classification=True):
     if enable_wandb:
         #Log gradients and model parameters
         wandb.watch(model)
@@ -58,6 +59,8 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
             # print('sampled data label:', label)
 
             output = model(data.float())
+            if binary_classification:
+                output = output.squeeze(1)
             loss = criterion(output, label)
 
             optimizer.zero_grad()
@@ -193,7 +196,7 @@ def mian(enable_wandb=False):
     for m in model.modules():
         if isinstance(m, (nn.Conv3d, nn.Linear)):
             nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-        print('initialize the model with He-initialization')
+    print('initialize the model with He-initialization')
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # load pretrain model
     # pretrain['state_dict'] = {k.replace("module.", ""): v for k, v in pretrain['state_dict'].items()}
@@ -246,7 +249,8 @@ def mian(enable_wandb=False):
     # metric
     auc_metric = ROCAUCMetric()
     ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterion,
-                 optimizer, scheduler, post_label, post_pred, auc_metric, device, enable_wandb=enable_wandb, save_dir=save_plot_dir)
+                 optimizer, scheduler, post_label, post_pred, auc_metric, device,
+                 enable_wandb=enable_wandb, save_dir=save_plot_dir, binary_classification=True)
 
 
 if __name__ == '__main__':
