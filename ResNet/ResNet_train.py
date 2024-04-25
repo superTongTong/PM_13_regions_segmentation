@@ -150,7 +150,7 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
 
 def mian(enable_wandb=False):
     project_name = "PCI_classification_MedicalNet"
-    run_name = "MedicalNet_lr5e-4_batch16_datasetv4_sigmoid_loss_BCE"
+    run_name = "MedicalNet_lr5e-5_batch16_datasetv4_sigmoid_loss_BCE"
     if enable_wandb:
         # Log in to wandb
         wandb.login(key='f20a2a6646a45224f8e867aa0c94a51efb8eed99')
@@ -173,8 +173,8 @@ def mian(enable_wandb=False):
     #     "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/model_weights.torch")
 
     # set hyperparameters
-    batch_size = 2  #64 out of memory
-    epochs = 2
+    batch_size = 16  #64 out of memory
+    epochs = 50
     val_interval = 1
     lr = 5e-5 # 3e-5
     gamma = 0.9
