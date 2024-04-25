@@ -26,5 +26,5 @@ class MedicalNet(nn.Module):
     def forward(self, x):
         features = self.model(x)
         # return torch.sigmoid_(self.fc(features))
-        return torch.softmax_(self.fc(features))
+        return nn.Softmax(self.fc(features))
 
