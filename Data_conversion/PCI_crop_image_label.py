@@ -87,7 +87,7 @@ def mian():
     # save_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test_v2'
     # csv_path = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/PCI_3_regions_new.csv'
     data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/raw_data/'
-    mask_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/masks/'
+    mask_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/masks_cleaned/'
     save_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v3'
     csv_path = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/PCI_3_regions_new.csv'
     # random_seed = 42
