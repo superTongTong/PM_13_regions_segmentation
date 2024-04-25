@@ -1,3 +1,4 @@
+import os
 import time
 import numpy as np
 import nibabel as nib
@@ -35,62 +36,6 @@ def keep_largest_blob_multilabel(data, class_map, rois):
     # print(f"  keep_largest_blob_multilabel took {time.time() - st:.2f}s")
     return data
 
-
-def remove_small_blobs(img: np.ndarray, interval=[10, 30], debug=False) -> np.ndarray:
-    """
-    Find blobs/clusters of same label. Remove all blobs which have a size which is outside of the interval.
-
-    Args:
-        img: Binary image.
-        interval: Boundaries of the sizes to remove.
-        debug: Show debug information.
-    Returns:
-        Detected blobs.
-    """
-    mask, number_of_blobs = ndimage.label(img)
-    if debug: print('Number of blobs before: ' + str(number_of_blobs))
-    counts = np.bincount(mask.flatten())  # number of pixels in each blob
-
-    # If only one blob (only background) abort because nothing to remove
-    if len(counts) <= 1: return img
-
-    remove = np.where((counts <= interval[0]) | (counts > interval[1]), True, False)
-    remove_idx = np.nonzero(remove)[0]
-    mask[np.isin(mask, remove_idx)] = 0
-    mask[mask > 0] = 1  # set everything else to 1
-
-    if debug:
-        print(f"counts: {sorted(counts)[::-1]}")
-        _, number_of_blobs_after = ndimage.label(mask)
-        print('Number of blobs after: ' + str(number_of_blobs_after))
-
-    return mask
-
-
-def remove_small_blobs_multilabel(data, class_map, rois, interval=[10, 30], debug=False):
-    """
-    Remove small blobs for the classes defined in rois.
-
-    data: multilabel image (np.array)
-    class_map: class map {label_idx: label_name}
-    rois: list of labels where to filter for the largest blob
-
-    return multilabel image (np.array)
-    """
-    st = time.time()
-    class_map_inv = {v: k for k, v in class_map.items()}
-
-    for roi in tqdm(rois):
-        idx = class_map_inv[roi]
-        data_roi = (data == idx)
-        cleaned_roi = remove_small_blobs(data_roi, interval, debug) > 0.5  # Remove small blobs from this ROI
-        data[data_roi] = 0  # Clear the original ROI in data
-        data[cleaned_roi] = idx  # Write back the cleaned ROI into data
-
-    # print(f"  remove_small_blobs_multilabel took {time.time() - st:.2f}s")
-    return data
-
-
 def remove_outside_of_mask(seg_path, mask_path, addon=1):
     """
     Remove all segmentations outside of mask.
@@ -107,22 +52,21 @@ def remove_outside_of_mask(seg_path, mask_path, addon=1):
 
 
 def main():
-    mask_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/masks_v2/s0164.nii.gz'
+    mask_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/PCI_masks_231cases/'
     class_map = {
         1: "Segment_1",
         2: "Segment_2",
         3: "Segment_3"}
     rois = ["Segment_1", "Segment_2", "Segment_3"]
-    nib_img = nib.load(mask_dir)
-    mask = nib_img.get_fdata()
-    # remove_small_blobs_mask = remove_small_blobs_multilabel(mask, class_map, rois, interval=[10, 30], debug=True)
-
-    keep_largest_blob_mask = keep_largest_blob_multilabel(mask, class_map, rois)
-
-    # save_path1 = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/masks_v2/s0164_cleaned_remove_small.nii.gz'
-    # nib.save(nib.Nifti1Image(remove_small_blobs_mask, nib_img.affine), save_path1)
-    save_path2 = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/masks_v2/s0164_cleaned_keep_largest.nii.gz'
-    nib.save(nib.Nifti1Image(keep_largest_blob_mask, nib_img.affine), save_path2)
+    for file in os.listdir(mask_dir):
+        if file.endswith('.nii.gz'):
+            print(f'start processing {file}...')
+            nib_img = nib.load(mask_dir + file)
+            mask = nib_img.get_fdata()
+            keep_largest_blob_mask = keep_largest_blob_multilabel(mask, class_map, rois)
+            save_path = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/masks_v2/' + file
+            print(f'saving to {save_path}...')
+            nib.save(nib.Nifti1Image(keep_largest_blob_mask, nib_img.affine), save_path)
 
 
 if __name__ == '__main__':

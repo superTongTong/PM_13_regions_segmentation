@@ -34,7 +34,7 @@ def seed_everything(seed):
 
 def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterion,
                  optimizer, scheduler, post_label, post_pred, auc_metric, device,
-                 enable_wandb=False, save_dir=None, binary_classification=True):
+                 enable_wandb=False, save_dir=None):
     if enable_wandb:
         #Log gradients and model parameters
         wandb.watch(model)
@@ -59,8 +59,6 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
             # print('sampled data label:', label)
 
             output = model(data.float())
-            if binary_classification:
-                output = output.squeeze(1)
             loss = criterion(output, label)
 
             optimizer.zero_grad()
@@ -159,7 +157,7 @@ def mian(enable_wandb=False):
         # Initialize wandb
         run = wandb.init(project=project_name, name=run_name)
     # specify all the directories
-    # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/'
+    # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_v4/'
     # save_plot_dir = f"C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/plot/confusion_matrix_map/{run_name}"
     # pretrained_model = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth'
 
@@ -181,7 +179,7 @@ def mian(enable_wandb=False):
     lr = 5e-4 # 3e-5
     gamma = 0.9
     seed = 42
-    num_classes = 1
+    num_classes = 2
     seed_everything(seed)
 
     #set model
@@ -232,10 +230,8 @@ def mian(enable_wandb=False):
     post_pred = Compose([EnsureType(), Activations(softmax=True)])
     post_label = Compose([EnsureType(), AsDiscrete(to_onehot=num_classes, n_classes=num_classes)])
 
-    if num_classes == 1:
-        criterion = nn.BCELoss()
-    else:
-        criterion = nn.CrossEntropyLoss()
+
+    criterion = nn.CrossEntropyLoss()
 
     # combine cross entropy loss with focal loss
     # criterion = CombinedLoss(alpha=1, gamma=2, weight=None)
@@ -250,7 +246,7 @@ def mian(enable_wandb=False):
     auc_metric = ROCAUCMetric()
     ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterion,
                  optimizer, scheduler, post_label, post_pred, auc_metric, device,
-                 enable_wandb=enable_wandb, save_dir=save_plot_dir, binary_classification=True)
+                 enable_wandb=enable_wandb, save_dir=save_plot_dir)
 
 
 if __name__ == '__main__':

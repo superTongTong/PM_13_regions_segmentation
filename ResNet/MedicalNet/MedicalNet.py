@@ -26,9 +26,5 @@ class MedicalNet(nn.Module):
     def forward(self, x):
         features = self.model(x)
         # return torch.sigmoid_(self.fc(features))
-        if self.num_classes == 2:
-            return torch.sigmoid_(self.fc(features))
-        elif self.num_classes == 4:
-            return torch.softmax_(self.fc(features))
-        else:
-            print("Number of classes must be 2 or 4. Current number of classes is ", self.num_classes)
+        return torch.softmax_(self.fc(features))
+
