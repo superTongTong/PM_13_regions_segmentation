@@ -178,7 +178,7 @@ def mian(enable_wandb=False):
     lr = 5e-4 # 3e-5
     gamma = 0.9
     seed = 42
-    num_classes = 2
+    num_classes = 1
     seed_everything(seed)
 
     #set model
@@ -229,7 +229,7 @@ def mian(enable_wandb=False):
     post_pred = Compose([EnsureType(), Activations(softmax=True)])
     post_label = Compose([EnsureType(), AsDiscrete(to_onehot=num_classes, n_classes=num_classes)])
 
-    if num_classes == 2:
+    if num_classes == 1:
         criterion = nn.BCELoss()
     else:
         criterion = nn.CrossEntropyLoss()
