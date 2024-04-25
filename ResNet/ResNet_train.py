@@ -58,14 +58,15 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
             data, label = batch_data[0]["image"].to(device), batch_data[0]["label"].to(device)
             # print('sampled data label:', label)
 
-            output = model(data.float())
-            loss = criterion(output, label)
+            # output = model(data.float())
+            output = model(data.float()).squeeze()
+            loss = criterion(output.float(), label.float())
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
             epoch_loss += loss.item()
-            epoch_len = len(train_loader) // train_loader.batch_size
+            epoch_len = len(train_loader)
             print(f"{step}/{epoch_len}, train_loss: {loss.item():.4f}")
 
         scheduler.step()
@@ -149,7 +150,7 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
 
 def mian(enable_wandb=False):
     project_name = "PCI_classification_MedicalNet"
-    run_name = "MedicalNet_lr5e-4_batch16_datasetv4_binary_classification"
+    run_name = "MedicalNet_lr5e-4_batch16_datasetv4_sigmoid_loss_BCE"
     if enable_wandb:
         # Log in to wandb
         wandb.login(key='f20a2a6646a45224f8e867aa0c94a51efb8eed99')
@@ -172,13 +173,13 @@ def mian(enable_wandb=False):
     #     "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/model_weights.torch")
 
     # set hyperparameters
-    batch_size = 16  #64 out of memory
-    epochs = 50
+    batch_size = 2  #64 out of memory
+    epochs = 2
     val_interval = 1
-    lr = 5e-4 # 3e-5
+    lr = 5e-5 # 3e-5
     gamma = 0.9
     seed = 42
-    num_classes = 2
+    num_classes = 1
     seed_everything(seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     #set model
@@ -231,7 +232,8 @@ def mian(enable_wandb=False):
     post_pred = Compose([EnsureType(), Activations(softmax=True)])
     post_label = Compose([EnsureType(), AsDiscrete(to_onehot=num_classes, n_classes=num_classes)])
 
-    criterion = nn.CrossEntropyLoss()
+    # criterion = nn.CrossEntropyLoss()
+    criterion = nn.BCELoss()
 
     # combine cross entropy loss with focal loss
     # criterion = CombinedLoss(alpha=1, gamma=2, weight=None)
