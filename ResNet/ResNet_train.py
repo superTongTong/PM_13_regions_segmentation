@@ -84,7 +84,7 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
                     val_images, val_labels = val_data["image"].to(device), val_data["label"].to(device)
                     y_pred = torch.cat([y_pred, model(val_images)], dim=0)
                     y = torch.cat([y, val_labels], dim=0)
-                y = y.squeeze()
+                y_pred = y_pred.squeeze()
                 val_l = criterion(y_pred.float(), y.float())
                 val_loss = val_l.item()
                 val_loss_list.append(val_loss)
