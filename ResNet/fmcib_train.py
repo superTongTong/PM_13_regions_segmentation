@@ -51,7 +51,7 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
 
         for batch_data in train_loader:
             step += 1
-            data, label = batch_data[0]["image"].to(device), batch_data[0]["label"].to(device)
+            data, label = batch_data["image"].to(device), batch_data["label"].to(device)
             print('sampled data label:', label)
 
             output = model(data.float())
@@ -62,7 +62,7 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
             optimizer.step()
 
             epoch_loss += loss.item()
-            epoch_len = len(train_loader) // train_loader.batch_size
+            epoch_len = len(train_loader)
             print(f"{step}/{epoch_len}, train_loss: {loss.item():.4f}")
 
         scheduler.step()
@@ -182,11 +182,11 @@ def mian(enable_wandb=False):
         conv1_t_stride=2,
         num_classes=num_classes
     )
-    # initialize the model with He-initialization
-    for m in model.modules():
-        if isinstance(m, (nn.Conv3d, nn.Linear)):
-            nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-    print('initialize the model with He-initialization')
+    # # initialize the model with He-initialization
+    # for m in model.modules():
+    #     if isinstance(m, (nn.Conv3d, nn.Linear)):
+    #         nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+    # print('initialize the model with He-initialization')
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # load pretrain model
     # pretrain['state_dict'] = {k.replace("module.", ""): v for k, v in pretrain['state_dict'].items()}
