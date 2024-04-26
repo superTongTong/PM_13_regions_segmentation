@@ -22,7 +22,7 @@ class CustomDataset(Dataset):
         label = data_file["label"]
 
         if label == 0:
-            image = self.transform2(data_file)
+            image = self.transform1(data_file)
         else:
             image = self.transform1(data_file)
 

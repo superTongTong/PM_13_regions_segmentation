@@ -242,7 +242,7 @@ def mian(enable_wandb=False):
     # post_label = Compose([EnsureType(), AsDiscrete(to_onehot=num_classes, n_classes=num_classes)])
     post_label = Compose([EnsureType()])
     # criterion = nn.CrossEntropyLoss()
-    criterion = nn.BCELoss()
+    criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([1.5]).to(device))
 
     # combine cross entropy loss with focal loss
     # criterion = CombinedLoss(alpha=1, gamma=2, weight=None)

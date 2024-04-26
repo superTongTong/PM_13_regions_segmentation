@@ -25,6 +25,6 @@ class MedicalNet(nn.Module):
 
     def forward(self, x):
         features = self.model(x)
-        # return self.fc(features)
-        return torch.sigmoid_(self.fc(features))
+        return self.fc(features)
+        # return torch.sigmoid_(self.fc(features))
 
