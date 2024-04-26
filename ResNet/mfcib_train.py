@@ -12,11 +12,8 @@ from dataloader import PCI_DataLoader
 from monai.transforms import Compose, EnsureType, Activations, AsDiscrete
 from monai.metrics import ROCAUCMetric
 import time
-from plot_results import plot_metrics
 from monai.data import decollate_batch
 import wandb
-from Loss_function import CombinedLoss
-from MedicalNet.MedicalNet import MedicalNet
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -145,7 +142,7 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
 
 def mian(enable_wandb=False):
     project_name = "PCI_classification_MedicalNet"
-    run_name = "mfcib_lr5e-4_batch16_datasetv4_binary_classes"
+    run_name = "mfcib_lr8e-5_batch16_datasetv4_2classes"
     if enable_wandb:
         # Log in to wandb
         wandb.login(key='f20a2a6646a45224f8e867aa0c94a51efb8eed99')
@@ -171,7 +168,7 @@ def mian(enable_wandb=False):
     batch_size = 16  #64 out of memory
     epochs = 50
     val_interval = 1
-    lr = 5e-4 # 3e-5
+    lr = 8e-5 # 3e-5
     gamma = 0.9
     seed = 42
     num_classes = 2
