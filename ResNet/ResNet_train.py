@@ -159,7 +159,7 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
 
 def mian(enable_wandb=False):
     project_name = "PCI_classification_MedicalNet"
-    run_name = "MedicalNet_lr5e-5_batch16_datasetv4_sigmoid_loss_BCE"
+    run_name = "MedicalNet_lr5e-5_batch16_datasetv4_BCEWithLogitsLoss"
     if enable_wandb:
         # Log in to wandb
         wandb.login(key='f20a2a6646a45224f8e867aa0c94a51efb8eed99')
@@ -210,17 +210,7 @@ def mian(enable_wandb=False):
     # model.to(device)
     # model.load_state_dict(pretrain, strict=False)
     # print("load pretrain weight from fmcib")
-    # # freeze the model
-    # for name, parameter in model.named_parameters():
-    #     if 'layer1' in name:
-    #         print(f"parameter '{name}' will be frozen")
-    #         parameter.requires_grad = False
-    #     elif 'layer2' in name:
-    #         print(f"parameter '{name}' will be frozen")
-    #         parameter.requires_grad = False
-    #     else:
-    #         print(f"parameter '{name}' will not be frozen")
-    #         parameter.requires_grad = True
+
 
     '''load MedicalNet model '''
     model = MedicalNet(path_to_weights=pretrained_model, device=device, sample_input_D=128,
