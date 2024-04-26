@@ -5,7 +5,6 @@ import torch
 from monai.data import CacheDataset, DataLoader
 from torch.utils.data.sampler import WeightedRandomSampler
 from collections import Counter
-from PCI_dataset import CustomDataset
 from monai.transforms import (Compose, LoadImaged, EnsureChannelFirstd, Orientationd, Resized, ToTensord,
                               RandRotated, RandAdjustContrastd, RandFlipd)
 
@@ -65,12 +64,10 @@ def PCI_DataLoader(data_dir, batch_size=1, shuffle=True, split='train', spatial_
     if split == 'train':
         transforms1 = pci_transform_train(spatial_size=spatial_size, p_Rotate=p_Rotate, p_Contrast=p_Contrast,
                                           p_flip=p_flip)
-        transforms2 = pci_transform_val(spatial_size=spatial_size)
-
         class_counts = [count for num, count in sorted(Counter(labels).items())]
         num_samples = sum(class_counts)
         class_weights = [num_samples / class_count for class_count in class_counts]
-        ds = CustomDataset(data_files, transform1=transforms1, transform2=transforms2)
+        ds = CacheDataset(data_files, transform=transforms1, progress=False)
         if use_sampler:
             weights = [class_weights[labels[i]] for i in range(int(num_samples))]
             sampler = WeightedRandomSampler(torch.DoubleTensor(weights), int(num_samples), replacement=True)
