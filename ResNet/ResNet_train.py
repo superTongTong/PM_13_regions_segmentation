@@ -55,7 +55,7 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
 
         for batch_data in train_loader:
             step += 1
-            data, label = batch_data[0]["image"].to(device), batch_data[0]["label"].to(device)
+            data, label = batch_data["image"].to(device), batch_data["label"].to(device)
             print('sampled data label:', label)
 
             # output = model(data.float())
