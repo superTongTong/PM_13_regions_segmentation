@@ -123,7 +123,7 @@ class nnUNetTrainer(object):
         self.preprocessed_dataset_folder_base = join(nnUNet_preprocessed, self.plans_manager.dataset_name) \
             if nnUNet_preprocessed is not None else None
 
-        # timestamp = datetime.now()
+        timestamp = datetime.now()
         # self.output_folder_base = join(nnUNet_results, self.plans_manager.dataset_name,
         #                                self.__class__.__name__ + "%d_%d_%d_%02.0d_%02.0d" % (timestamp.year, timestamp.month, timestamp.day, timestamp.hour, timestamp.minute)) \
         self.output_folder_base = join(nnUNet_results, self.plans_manager.dataset_name,
