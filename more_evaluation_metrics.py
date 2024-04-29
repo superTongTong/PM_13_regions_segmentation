@@ -8,37 +8,6 @@ import os
 import time
 import pandas as pd
 
-def cl_score(v, s):
-    """[this function computes the skeleton volume overlap]
-
-    Args:
-        v ([bool]): [image]
-        s ([bool]): [skeleton]
-
-    Returns:
-        [float]: [computed skeleton volume intersection]
-    """
-    return np.sum(v*s)/np.sum(s)
-
-
-def clDice(v_p, v_l):
-    """[this function computes the cldice metric]
-
-    Args:
-        v_p ([bool]): [predicted image]
-        v_l ([bool]): [ground truth image]
-
-    Returns:
-        [float]: [cldice metric]
-    """
-    if len(v_p.shape)==2:
-        tprec = cl_score(v_p,skeletonize(v_l))
-        tsens = cl_score(v_l,skeletonize(v_p))
-    elif len(v_p.shape)==3:
-        tprec = cl_score(v_p,skeletonize_3d(v_l))
-        tsens = cl_score(v_l,skeletonize_3d(v_p))
-    return 2*tprec*tsens/(tprec+tsens)
-
 
 def compute_all_metrics(pred, gt, spacing, bor_gt, bor_pred):
     # Compute the surface distances
@@ -46,7 +15,11 @@ def compute_all_metrics(pred, gt, spacing, bor_gt, bor_pred):
     border_DSC = compute_dice_coefficient(bor_gt, bor_pred)
     border_surface_distance = compute_surface_distances(bor_gt, bor_pred, spacing)
     border_SD1 = compute_surface_dice_at_tolerance(border_surface_distance, 1)
-    border_clDice = clDice(bor_pred, bor_gt)
+    border_SD2 = compute_surface_dice_at_tolerance(border_surface_distance, 2)
+    border_SD3 = compute_surface_dice_at_tolerance(border_surface_distance, 3)
+    border_SD4 = compute_surface_dice_at_tolerance(border_surface_distance, 4)
+    border_SD5 = compute_surface_dice_at_tolerance(border_surface_distance, 5)
+    # border_clDice = clDice(bor_pred, bor_gt)
     surface_distances = compute_surface_distances(gt, pred, spacing)
     # hausdorff_distance = compute_robust_hausdorff(surface_distances, 100)
     HD95 = compute_robust_hausdorff(surface_distances, 95)
@@ -59,7 +32,11 @@ def compute_all_metrics(pred, gt, spacing, bor_gt, bor_pred):
     DSC = round(DSC, 4)
     border_DSC = round(border_DSC, 4)
     border_SD1 = round(border_SD1, 4)
-    border_clDice = round(border_clDice, 4)
+    border_SD2 = round(border_SD2, 4)
+    border_SD3 = round(border_SD3, 4)
+    border_SD4 = round(border_SD4, 4)
+    border_SD5 = round(border_SD5, 4)
+    # border_clDice = round(border_clDice, 4)
     # hausdorff_distance = round(hausdorff_distance, 4)
     HD95 = round(HD95, 4)
     average_distance_gt_to_pred = round(average_distance[0], 4)
@@ -68,7 +45,8 @@ def compute_all_metrics(pred, gt, spacing, bor_gt, bor_pred):
     surface_dice_2mm = round(surface_dice_2mm, 4)
     surface_dice_3mm = round(surface_dice_3mm, 4)
 
-    return DSC, border_DSC, border_SD1, border_clDice, HD95, average_distance_pred_to_gt, average_distance_gt_to_pred, surface_dice_1mm, surface_dice_2mm, surface_dice_3mm
+    return (DSC, border_DSC, border_SD1, border_SD2, border_SD3, border_SD4, border_SD5, HD95,
+            average_distance_pred_to_gt, average_distance_gt_to_pred, surface_dice_1mm, surface_dice_2mm, surface_dice_3mm)
 
 
 def obtain_border_regions(pred, gt, liver_mask, stomach_mask, spleen_mask, pancreas_mask, itk_img):
@@ -106,7 +84,7 @@ def obtain_border_regions(pred, gt, liver_mask, stomach_mask, spleen_mask, pancr
     return border_pred, border_gt
 
 
-def main(prediction_file_path, ground_truth_file_path, dir_organ, case_number):
+def main(prediction_file_path, ground_truth_file_path, dir_organs, case_number):
     # targeted_folder = "./3d_slicer_checker/pred"
     data = []
 
@@ -143,11 +121,13 @@ def main(prediction_file_path, ground_truth_file_path, dir_organ, case_number):
         b_pred_bool = p_b_mask.astype(bool)
         b_gt_bool = g_b_mask.astype(bool)
 
-        (DSC, inter_organ, inter_organ_SD1, inter_organ_clDice, HD95, MASD_gt_to_pred, MASD_pred_to_gt, surface_dice_1mm,
+        (DSC, inter_organ, inter_organ_SD1, inter_organ_SD2, inter_organ_SD3, inter_organ_SD4, inter_organ_SD5, HD95,
+         MASD_gt_to_pred, MASD_pred_to_gt, surface_dice_1mm,
          surface_dice_2mm, surface_dice_3mm) = compute_all_metrics(array_pred_bool, array_gt_bool, sitk_spacing, b_gt_bool, b_pred_bool)
 
         data.append({"Case ID": case_number, "Region_num": i, "DSC": DSC, "Inter-organ DSC": inter_organ,
-                     "Inter-organ SD1": inter_organ_SD1, "Inter-organ clDice": inter_organ_clDice,
+                     "Inter-organ SD1": inter_organ_SD1, "Inter-organ SD2": inter_organ_SD2, "Inter-organ SD3": inter_organ_SD3,
+                     "Inter-organ SD4": inter_organ_SD4, "Inter-organ SD5": inter_organ_SD5,
                      "surface_dice_1mm": surface_dice_1mm,
                      "surface_dice_2mm": surface_dice_2mm, "surface_dice_3mm": surface_dice_3mm,
                      "HD95": HD95, "MASD gt to pred": MASD_gt_to_pred, "MASD pred to gt": MASD_pred_to_gt})
@@ -155,7 +135,10 @@ def main(prediction_file_path, ground_truth_file_path, dir_organ, case_number):
     avg_DSC = (data[0]["DSC"] + data[1]["DSC"] + data[2]["DSC"]) / 3
     avg_border_DSC = (data[0]["Inter-organ DSC"] + data[1]["Inter-organ DSC"] + data[2]["Inter-organ DSC"]) / 3
     avg_border_SD1 = (data[0]["Inter-organ SD1"] + data[1]["Inter-organ SD1"] + data[2]["Inter-organ SD1"]) / 3
-    avg_border_clDice = (data[0]["Inter-organ clDice"] + data[1]["Inter-organ clDice"] + data[2]["Inter-organ clDice"]) / 3
+    avg_border_SD2 = (data[0]["Inter-organ SD2"] + data[1]["Inter-organ SD2"] + data[2]["Inter-organ SD2"]) / 3
+    avg_border_SD3 = (data[0]["Inter-organ SD3"] + data[1]["Inter-organ SD3"] + data[2]["Inter-organ SD3"]) / 3
+    avg_border_SD4 = (data[0]["Inter-organ SD4"] + data[1]["Inter-organ SD4"] + data[2]["Inter-organ SD4"]) / 3
+    avg_border_SD5 = (data[0]["Inter-organ SD5"] + data[1]["Inter-organ SD5"] + data[2]["Inter-organ SD5"]) / 3
     # avg_hausdorff_distance = (data[0]["hausdorff_distance"] + data[1]["hausdorff_distance"] + data[2]["hausdorff_distance"]) / 3
     avg_HD95 = (data[0]["HD95"] + data[1]["HD95"] + data[2]["HD95"]) / 3
     avg_MASD_gt_to_pred = (data[0]["MASD gt to pred"] + data[1]["MASD gt to pred"] + data[2]["MASD gt to pred"]) / 3
@@ -166,7 +149,8 @@ def main(prediction_file_path, ground_truth_file_path, dir_organ, case_number):
 
     data.append({"Case ID": case_number, "Region_num": "average of 3 regions", "DSC": round(avg_DSC, 4),
                  "Inter-organ DSC": round(avg_border_DSC, 4), "Inter-organ SD1": round(avg_border_SD1, 4),
-                 "Inter-organ clDice": round(avg_border_clDice, 4),
+                 "Inter-organ SD2": round(avg_border_SD2, 4), "Inter-organ SD3": round(avg_border_SD3, 4),
+                 "Inter-organ SD4": round(avg_border_SD4, 4), "Inter-organ SD5": round(avg_border_SD5, 4),
                  "surface_dice_1mm": round(avg_surface_dice_1mm, 4), "surface_dice_2mm": round(avg_surface_dice_2mm, 4),
                  "surface_dice_3mm": round(avg_surface_dice_3mm, 4), "HD95": round(avg_HD95, 4),
                  "MASD gt to pred": round(avg_MASD_gt_to_pred, 4), "MASD pred to gt": round(avg_MASD_pred_to_gt, 4)})
@@ -188,45 +172,69 @@ if __name__ == "__main__":
     following code for test multiple cases in the input folder
     '''
     input_folder = "./code_test_folder/for_evaluation/"
-    pred_folder = "contrastAgument"
     # pred_folder = "contrastAgument"
-    # pred_folder = "gaussianBlur"
-    # pred_folder = "gaussianNoise"
-    # pred_folder = "no_DA_200epoch"
-    # pred_folder = "R_S_Sim"
-    # pred_folder = "rotation"
-    # pred_folder = "scale"
-    # pred_folder = "SimLowRes"
-    # pred_folder = "R_S_Sim_Con"
-    # pred_folder = "R_S_Sim_Con_GBlur"
+    # # pred_folder = "contrastAgument"
+    # # pred_folder = "gaussianBlur"
+    # # pred_folder = "gaussianNoise"
+    # # pred_folder = "no_DA_200epoch"
+    # # pred_folder = "R_S_Sim"
+    # # pred_folder = "rotation"
+    # # pred_folder = "scale"
+    # # pred_folder = "SimLowRes"
+    # # pred_folder = "R_S_Sim_Con"
+    # # pred_folder = "R_S_Sim_Con_GBlur"
+    # # List of pred_folders
+    pred_folders = ["contrastAgument", "gaussianBlur", "gaussianNoise", "no_DA_200epoch", "R_S_Sim",
+                    "rotation", "scale", "SimLowRes", "R_S_Sim_Con", "R_S_Sim_Con_GBlur"]
+    df_summary = pd.DataFrame()
+    for pred_folder in pred_folders:
+        print(f"Start evaluating {pred_folder} prediction results")
+        pred_path = os.path.join(input_folder, f"200epochs/{pred_folder}")
+        gt_path = os.path.join(input_folder, "gt")
+        organs_masks_path = os.path.join(input_folder, "organs_masks")
+        count = 0
+        df = pd.DataFrame()
 
-    pred_path = os.path.join(input_folder, f"200epochs/{pred_folder}")
-    gt_path = os.path.join(input_folder, "gt")
-    organs_masks_path = os.path.join(input_folder, "organs_masks")
-    count = 0
-    df = pd.DataFrame()
-    for file in os.listdir(pred_path):
-        if file.endswith(".nii.gz"):
-            count += 1
-            forloop_start_time = time.time()
-            prediction_file_path = os.path.join(pred_path, file)
-            ground_truth_file_path = os.path.join(gt_path, file)
-            dir_organs = os.path.join(organs_masks_path, file.split(".")[0])
-            data = main(prediction_file_path, ground_truth_file_path, dir_organs, case_number=file.split(".")[0])
-            if count == 1:
-                # Append data to the DataFrame
-                df = df._append(pd.DataFrame(data), ignore_index=False)
-            else:
-                df = df._append(pd.DataFrame(data), ignore_index=True)
-            print(f"file {file} is done!")
-            print("--- %s seconds ---" % round(time.time() - forloop_start_time, 2))
+        for file in os.listdir(pred_path):
+            if file.endswith(".nii.gz"):
+                count += 1
+                forloop_start_time = time.time()
+                prediction_file_path = os.path.join(pred_path, file)
+                ground_truth_file_path = os.path.join(gt_path, file)
+                dir_organs = os.path.join(organs_masks_path, file.split(".")[0])
+                data = main(prediction_file_path, ground_truth_file_path, dir_organs, case_number=file.split(".")[0])
+                if count == 1:
+                    # Append data to the DataFrame
+                    df = df._append(pd.DataFrame(data), ignore_index=False)
+                else:
+                    df = df._append(pd.DataFrame(data), ignore_index=True)
+                print(f"file {file} is done!")
+                print("--- %s seconds ---" % round(time.time() - forloop_start_time, 2))
 
-            # if count == 2:
-            #     break
-
-    # Plot data in bar chart for better visualization
-    # plot_bar(df)
-
-    # Save the DataFrame to a csv file
-    df.to_csv(f"{input_folder}evaluation_metrics_{pred_folder}.csv", index=False)
-    print("--- Total time %s seconds ---" % round(time.time() - start_time, 2))
+        # compute average over all cases
+        avg_overall_DSC = df["DSC"].mean()
+        avg_overall_border_DSC = df["Inter-organ DSC"].mean()
+        avg_overall_border_SD1 = df["Inter-organ SD1"].mean()
+        avg_overall_border_SD2 = df["Inter-organ SD2"].mean()
+        avg_overall_border_SD3 = df["Inter-organ SD3"].mean()
+        avg_overall_border_SD4 = df["Inter-organ SD4"].mean()
+        avg_overall_border_SD5 = df["Inter-organ SD5"].mean()
+        avg_overall_HD95 = df["HD95"].mean()
+        avg_overall_MASD_gt_to_pred = df["MASD gt to pred"].mean()
+        avg_overall_MASD_pred_to_gt = df["MASD pred to gt"].mean()
+        avg_overall_surface_dice_1mm = df["surface_dice_1mm"].mean()
+        avg_overall_surface_dice_2mm = df["surface_dice_2mm"].mean()
+        avg_overall_surface_dice_3mm = df["surface_dice_3mm"].mean()
+        df = df._append({"Case ID": f"{pred_folder}", "Region_num": f"{pred_folder}", "DSC": round(avg_overall_DSC, 4),
+                        "Inter-organ DSC": round(avg_overall_border_DSC, 4), "Inter-organ SD1": round(avg_overall_border_SD1, 4),
+                        "Inter-organ SD2": round(avg_overall_border_SD2, 4), "Inter-organ SD3": round(avg_overall_border_SD3, 4),
+                        "Inter-organ SD4": round(avg_overall_border_SD4, 4), "Inter-organ SD5": round(avg_overall_border_SD5, 4),
+                        "HD95": round(avg_overall_HD95, 4), "MASD gt to pred": round(avg_overall_MASD_gt_to_pred, 4),
+                        "MASD pred to gt": round(avg_overall_MASD_pred_to_gt, 4), "surface_dice_1mm": round(avg_overall_surface_dice_1mm, 4),
+                        "surface_dice_2mm": round(avg_overall_surface_dice_2mm, 4), "surface_dice_3mm": round(avg_overall_surface_dice_3mm, 4)},
+                        ignore_index=True)
+        # Save the DataFrame to a csv file
+        df.to_csv(f"{input_folder}evaluation_metrics_{pred_folder}.csv", index=False)
+        print("--- Total time %s seconds ---" % round(time.time() - start_time, 2))
+        df_summary = df_summary.append(df.iloc[-1])
+    df_summary.to_csv(f"{input_folder}evaluation_metrics_summary.csv", index=False)
