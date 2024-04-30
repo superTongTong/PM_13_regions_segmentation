@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 import monai.networks.nets as nets
@@ -159,66 +158,58 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
 
 def mian(enable_wandb=False):
     project_name = "PCI_classification_MedicalNet"
-    run_name = "MedicalNet_lr5e-5_batch16_datasetv4_BCEWithLogitsLoss"
+    run_name = "fmcib_lr8e-5_batch16_datasetv4_BCEWithLogitsLoss_binary"
     if enable_wandb:
         # Log in to wandb
         wandb.login(key='f20a2a6646a45224f8e867aa0c94a51efb8eed99')
         # Initialize wandb
         run = wandb.init(project=project_name, name=run_name)
     # specify all the directories
+    '''dir in local'''
     # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_v4/'
     # save_plot_dir = f"C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/plot/confusion_matrix_map/{run_name}"
     # pretrained_model = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth'
-
     # pretrain = torch.load(
-    #     "C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/model_weights.torch")
-    # #
+    #      "C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/model_weights.torch")
+    '''dir in server'''
     data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v4/'
-    pretrained_model = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth'
     save_plot_dir = f"/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/confusion_matrix_map/{run_name}"
-    # # pretrain = torch.load(
-    # #     "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
-    # pretrain = torch.load(
-    #     "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/model_weights.torch")
-
+    pretrain = torch.load(
+        "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/model_weights.torch")
+    # pretrained_model = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth'
     # set hyperparameters
     batch_size = 16  #64 out of memory
     epochs = 50
     val_interval = 1
-    lr = 5e-5 # 3e-5
+    lr = 8e-5 # 3e-5
     gamma = 0.9
     seed = 42
     num_classes = 1
     seed_everything(seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     #set model
-    # model = nets.resnet50(
-    #     pretrained=False,
-    #     n_input_channels=1,
-    #     widen_factor=2,
-    #     conv1_t_stride=2,
-    #     num_classes=num_classes
-    # )
-    # initialize the model with He-initialization
-    # for m in model.modules():
-    #     if isinstance(m, (nn.Conv3d, nn.Linear)):
-    #         nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-    # print('initialize the model with He-initialization')
-
-    # load pretrain model
-    # pretrain['state_dict'] = {k.replace("module.", ""): v for k, v in pretrain['state_dict'].items()}
-    # model.to(device)
-    # model.load_state_dict(pretrain, strict=False)
-    # print("load pretrain weight from fmcib")
+    model = nets.resnet50(
+        pretrained=False,
+        n_input_channels=1,
+        widen_factor=2,
+        conv1_t_stride=2,
+        num_classes=num_classes
+    )
 
 
-    '''load MedicalNet model '''
-    model = MedicalNet(path_to_weights=pretrained_model, device=device, sample_input_D=128,
-                       sample_input_H=128, sample_input_W=128, num_classes=num_classes)
-    print("load MedicalNet model")
+    # '''load fmcib model '''
+    model.to(device)
+    model.load_state_dict(pretrain, strict=False)
+    print("load pretrain weight from fmcib")
+
+
+    # '''load MedicalNet model '''
+    # model = MedicalNet(path_to_weights=pretrained_model, device=device, sample_input_D=128,
+    #                    sample_input_H=128, sample_input_W=128, num_classes=num_classes)
+    # print("load MedicalNet model")
 
     # set device
-    model.to(device)
+    # model.to(device)
 
     # prepare dataloader
     train_loader = PCI_DataLoader(data_dir, batch_size=batch_size, shuffle=False,
@@ -232,7 +223,7 @@ def mian(enable_wandb=False):
     # post_label = Compose([EnsureType(), AsDiscrete(to_onehot=num_classes, n_classes=num_classes)])
     post_label = Compose([EnsureType()])
     # criterion = nn.CrossEntropyLoss()
-    criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([1.5]).to(device))
+    criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([1.1]).to(device))
 
     # combine cross entropy loss with focal loss
     # criterion = CombinedLoss(alpha=1, gamma=2, weight=None)
