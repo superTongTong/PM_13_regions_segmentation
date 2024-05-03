@@ -14,7 +14,7 @@ from monai.metrics import ROCAUCMetric
 import time
 from monai.data import decollate_batch
 import wandb
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, roc_curve, auc
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -92,10 +92,6 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
                 y_pred_act = [post_pred(i) for i in decollate_batch(y_pred)]
                 auc_metric(y_pred_act, y_onehot)
                 auc_result = auc_metric.aggregate()
-                auc_metric.plot_roc_curve(f'{save_dir}/roc_auc_curve_epoch_{epoch + 1}.png')
-                auc_metric.plot_precision_recall_curve(f'{save_dir}/precision_recall_curve_epoch_{epoch + 1}.png')
-                auc_metric.plot_confusion_matrix(f'{save_dir}/confusion_matrix_map_epoch_{epoch + 1}.png')
-                auc_metric.plot_metric(f'{save_dir}/metric_curve_epoch_{epoch + 1}.png')
                 auc_metric.reset()
                 del y_pred_act, y_onehot
                 metric_values.append(auc_result)
@@ -119,41 +115,50 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
                     wandb.log(
                         {"Learning Rate": optimizer.param_groups[0]['lr'], "Train Loss": epoch_loss,
                          "Validation Loss": val_loss, "AUC": auc_result, "Accuracy": acc_metric})
-        # # save confusion matrix the 1 first and then save every 10 epochs
-        # os.makedirs(save_dir, exist_ok=True)
-        # if epoch == 0 and save_dir is not None:
-        #     # Compute confusion matrix
-        #     cm = confusion_matrix(y.cpu().numpy(), y_pred.argmax(dim=1).cpu().numpy())
-        #     # Plot confusion matrix
-        #     plt.figure(figsize=(10, 10))
-        #     sns.heatmap(cm, annot=True, fmt="d")
-        #     plt.title("Confusion matrix")
-        #     plt.ylabel('True label')
-        #     plt.xlabel('Predicted label')
-        #     plt.savefig(f'{save_dir}/confusion_matrix_epoch_{epoch + 1}.png')
-        # if (epoch + 1) % 10 == 0 and save_dir is not None:
-        #     # Compute confusion matrix
-        #     cm = confusion_matrix(y.cpu().numpy(), y_pred.argmax(dim=1).cpu().numpy())
-        #     # Plot confusion matrix# Plot confusion matrix
-        #     plt.figure(figsize=(10, 10))
-        #     sns.heatmap(cm, annot=True, fmt="d")
-        #     plt.title("Confusion matrix")
-        #     plt.ylabel('True label')
-        #     plt.xlabel('Predicted label')
-        #     plt.savefig(f'{save_dir}/confusion_matrix_epoch_{epoch + 1}.png')
-        # # polt rocauc curve at last epoch
-        # if epoch == epochs - 1 and save_dir is not None:
-        #     # plot rocauc curve
-        #     auc_metric.plot_roc_curve(f'{save_dir}/roc_auc_curve_epoch_{epoch + 1}.png')
-        #     auc_metric.plot_precision_recall_curve(f'{save_dir}/precision_recall_curve_epoch_{epoch + 1}.png')
-        #     auc_metric.plot_confusion_matrix(f'{save_dir}/confusion_matrix_map_epoch_{epoch + 1}.png')
-        #     auc_metric.plot_metric(f'{save_dir}/metric_curve_epoch_{epoch + 1}.png')
+        # save confusion matrix the 1 first and then save every 10 epochs
+        os.makedirs(save_dir, exist_ok=True)
+        if epoch == 0 and save_dir is not None:
+            # Compute confusion matrix
+            cm = confusion_matrix(y.cpu().numpy(), y_pred.argmax(dim=1).cpu().numpy())
+            # Plot confusion matrix
+            plt.figure(figsize=(10, 10))
+            sns.heatmap(cm, annot=True, fmt="d")
+            plt.title("Confusion matrix")
+            plt.ylabel('True label')
+            plt.xlabel('Predicted label')
+            plt.savefig(f'{save_dir}/confusion_matrix_epoch_{epoch + 1}.png')
+        if (epoch + 1) % 10 == 0 and save_dir is not None:
+            # Compute confusion matrix
+            cm = confusion_matrix(y.cpu().numpy(), y_pred.argmax(dim=1).cpu().numpy())
+            # Plot confusion matrix# Plot confusion matrix
+            plt.figure(figsize=(10, 10))
+            sns.heatmap(cm, annot=True, fmt="d")
+            plt.title("Confusion matrix")
+            plt.ylabel('True label')
+            plt.xlabel('Predicted label')
+            plt.savefig(f'{save_dir}/confusion_matrix_epoch_{epoch + 1}.png')
+            # Plot ROC AUC curve
+            fpr, tpr, _ = roc_curve(y.cpu().numpy(), y_pred.argmax(dim=1).cpu().numpy())
+            roc_auc = auc(fpr, tpr)
+            plt.figure(figsize=(10, 10))
+            lw = 2
+            plt.plot(fpr, tpr, color='darkorange',
+                        lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
+            plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+            plt.xlim([0.0, 1.0])
+            plt.ylim([0.0, 1.05])
+            plt.xlabel('False Positive Rate')
+            plt.ylabel('True Positive Rate')
+            plt.title('Receiver operating characteristic example')
+            plt.legend(loc="lower right")
+            plt.savefig(f'{save_dir}/roc_auc_curve.png')
+
         print(f"train completed, best_metric: {best_metric:.4f} at epoch: {best_metric_epoch}")
 
 
 def mian(enable_wandb=False):
     project_name = "PCI_classification_MedicalNet"
-    run_name = "MedicalNet_lr8e-5_batch16_datasetv4_4classes"
+    run_name = "MedicalNet_lr8e-5_batch16_datasetv3_4classes"
     if enable_wandb:
         # Log in to wandb
         wandb.login(key='f20a2a6646a45224f8e867aa0c94a51efb8eed99')
