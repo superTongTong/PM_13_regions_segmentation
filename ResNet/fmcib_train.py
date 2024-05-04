@@ -14,10 +14,9 @@ from monai.metrics import ROCAUCMetric
 import time
 from monai.data import decollate_batch
 import wandb
-from sklearn.metrics import confusion_matrix, roc_curve, auc
+from sklearn.metrics import confusion_matrix, precision_recall_fscore_support, classification_report
 import matplotlib.pyplot as plt
 import seaborn as sns
-
 
 def seed_everything(seed):
     random.seed(seed)
@@ -87,6 +86,10 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
                 acc_value = torch.eq(y_pred.argmax(dim=1), y)
                 acc_metric = acc_value.sum().item() / len(acc_value)
                 acc_values.append(acc_metric)
+
+                # compute precision, recall, f1-score for each class
+                precision, recall, f1_score, support = precision_recall_fscore_support(y.cpu().numpy(), y_pred.argmax(dim=1).cpu().numpy(), labels=[0, 1, 2, 3], average=None)
+                print(f"epoch {epoch + 1} precision: {precision}, recall: {recall}, f1_score: {f1_score}")
                 y_onehot = [post_label(i) for i in decollate_batch(y)]
                 y_onehot = torch.stack(y_onehot, dim=0).to(device)
                 y_pred_act = [post_pred(i) for i in decollate_batch(y_pred)]
@@ -100,11 +103,6 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
                 if acc_metric > best_metric:
                     best_metric = acc_metric
                     best_metric_epoch = epoch + 1
-                    # save_path = "C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/saved_model/best_metric_ResNet10.pth"
-                    # os.makedirs(save_path, exist_ok=True)
-                    # torch.save(model.state_dict(),
-                    #            save_path)
-                    # print("saved new best metric model")
                 print(
                     "current epoch: {} current accuracy: {:.4f} best accuracy: {:.4f} at epoch {}".format(
                         epoch + 1, acc_metric,  best_metric, best_metric_epoch
@@ -114,7 +112,11 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
                     # Log metrics to wandb
                     wandb.log(
                         {"Learning Rate": optimizer.param_groups[0]['lr'], "Train Loss": epoch_loss,
-                         "Validation Loss": val_loss, "AUC": auc_result, "Accuracy": acc_metric})
+                         "Validation Loss": val_loss, "AUC": auc_result, "Accuracy": acc_metric,
+                         'precision_0': precision[0], 'recall_0': recall[0], 'f1_score_0': f1_score[0],
+                         'precision_1': precision[0], 'recall_1': recall[0], 'f1_score_1': f1_score[0],
+                         'precision_2': precision[0], 'recall_2': recall[0], 'f1_score_2': f1_score[0],
+                         'precision_3': precision[0], 'recall_3': recall[0], 'f1_score_3': f1_score[0]})
         # save confusion matrix the 1 first and then save every 10 epochs
         os.makedirs(save_dir, exist_ok=True)
         if epoch == 0 and save_dir is not None:
@@ -127,6 +129,11 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
             plt.ylabel('True label')
             plt.xlabel('Predicted label')
             plt.savefig(f'{save_dir}/confusion_matrix_epoch_{epoch + 1}.png')
+
+            gt = y.cpu().numpy()
+            pred = y_pred.argmax(dim=1).cpu().numpy()
+            print(classification_report(gt, pred, labels=[0, 1, 2, 3], output_dict=False))
+
         if (epoch + 1) % 10 == 0 and save_dir is not None:
             # Compute confusion matrix
             cm = confusion_matrix(y.cpu().numpy(), y_pred.argmax(dim=1).cpu().numpy())
@@ -137,21 +144,9 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
             plt.ylabel('True label')
             plt.xlabel('Predicted label')
             plt.savefig(f'{save_dir}/confusion_matrix_epoch_{epoch + 1}.png')
-            # Plot ROC AUC curve
-            fpr, tpr, _ = roc_curve(y.cpu().numpy(), y_pred.argmax(dim=1).cpu().numpy())
-            roc_auc = auc(fpr, tpr)
-            plt.figure(figsize=(10, 10))
-            lw = 2
-            plt.plot(fpr, tpr, color='darkorange',
-                        lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
-            plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
-            plt.xlim([0.0, 1.0])
-            plt.ylim([0.0, 1.05])
-            plt.xlabel('False Positive Rate')
-            plt.ylabel('True Positive Rate')
-            plt.title('Receiver operating characteristic example')
-            plt.legend(loc="lower right")
-            plt.savefig(f'{save_dir}/roc_auc_curve.png')
+            gt = y.cpu().numpy()
+            pred = y_pred.argmax(dim=1).cpu().numpy()
+            print(classification_report(gt, pred, labels=[0, 1, 2, 3], output_dict=False))
 
         print(f"train completed, best_metric: {best_metric:.4f} at epoch: {best_metric_epoch}")
 
@@ -169,10 +164,10 @@ def mian(enable_wandb=False):
     # save_plot_dir = f"C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/plot/confusion_matrix_map/{run_name}"
     # pretrained_model = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth'
     # pretrain = torch.load(
-    #     "C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/model_weights.torch")
+        # "C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/model_weights.torch")
 
     data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v3/'
-    # # pretrained_model = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth'
+    # pretrained_model = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth'
     save_plot_dir = f"/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/confusion_matrix_map/{run_name}"
     pretrain = torch.load(
         "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
