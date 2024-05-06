@@ -28,11 +28,16 @@ def seed_everything(seed):
     torch.backends.cudnn.deterministic = True
 
 
-def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterion,
+def ResNet_train(num_cls, epochs, val_interval, model, train_loader, val_loader, criterion,
                  optimizer, scheduler, post_label, post_pred, auc_metric, device, enable_wandb=False, save_dir=None):
     if enable_wandb:
         #Log gradients and model parameters
         wandb.watch(model)
+
+    if num_cls == 4:
+        eva_labels = [0, 1, 2, 3]
+    else:
+        eva_labels = [0, 1]
 
     best_metric = -1
     best_metric_epoch = -1
@@ -88,7 +93,7 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
                 acc_values.append(acc_metric)
 
                 # compute precision, recall, f1-score for each class
-                precision, recall, f1_score, support = precision_recall_fscore_support(y.cpu().numpy(), y_pred.argmax(dim=1).cpu().numpy(), labels=[0, 1, 2, 3], average=None)
+                precision, recall, f1_score, support = precision_recall_fscore_support(y.cpu().numpy(), y_pred.argmax(dim=1).cpu().numpy(), labels=eva_labels, average=None)
                 print(f"epoch {epoch + 1} precision: {precision}, recall: {recall}, f1_score: {f1_score}")
                 y_onehot = [post_label(i) for i in decollate_batch(y)]
                 y_onehot = torch.stack(y_onehot, dim=0).to(device)
@@ -112,11 +117,7 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
                     # Log metrics to wandb
                     wandb.log(
                         {"Learning Rate": optimizer.param_groups[0]['lr'], "Train Loss": epoch_loss,
-                         "Validation Loss": val_loss, "AUC": auc_result, "Accuracy": acc_metric,
-                         'precision_0': precision[0], 'recall_0': recall[0], 'f1_score_0': f1_score[0],
-                         'precision_1': precision[0], 'recall_1': recall[0], 'f1_score_1': f1_score[0],
-                         'precision_2': precision[0], 'recall_2': recall[0], 'f1_score_2': f1_score[0],
-                         'precision_3': precision[0], 'recall_3': recall[0], 'f1_score_3': f1_score[0]})
+                         "Validation Loss": val_loss, "AUC": auc_result, "Accuracy": acc_metric})
         # save confusion matrix the 1 first and then save every 10 epochs
         os.makedirs(save_dir, exist_ok=True)
         if epoch == 0 and save_dir is not None:
@@ -132,7 +133,7 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
 
             gt = y.cpu().numpy()
             pred = y_pred.argmax(dim=1).cpu().numpy()
-            print(classification_report(gt, pred, labels=[0, 1, 2, 3], output_dict=False))
+            print(classification_report(gt, pred, labels=eva_labels, output_dict=False))
 
         if (epoch + 1) % 10 == 0 and save_dir is not None:
             # Compute confusion matrix
@@ -146,27 +147,46 @@ def ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterio
             plt.savefig(f'{save_dir}/confusion_matrix_epoch_{epoch + 1}.png')
             gt = y.cpu().numpy()
             pred = y_pred.argmax(dim=1).cpu().numpy()
-            print(classification_report(gt, pred, labels=[0, 1, 2, 3], output_dict=False))
+            print(classification_report(gt, pred, labels=eva_labels, output_dict=False))
 
         print(f"train completed, best_metric: {best_metric:.4f} at epoch: {best_metric_epoch}")
 
 
 def mian(enable_wandb=False):
-    project_name = "PCI_classification_MedicalNet"
-    run_name = "MedicalNet_lr8e-5_batch16_datasetv3_4classes"
-    if enable_wandb:
-        # Log in to wandb
-        wandb.login(key='f20a2a6646a45224f8e867aa0c94a51efb8eed99')
-        # Initialize wandb
-        run = wandb.init(project=project_name, name=run_name)
+    # set hyperparameters
+    batch_size = 16  # 64 out of memory
+    epochs = 50
+    val_interval = 1
+    lr = 8e-5  # 3e-5
+    gamma = 0.9
+    seed = 42
+    num_classes = 4
+    seed_everything(seed)
+
     # specify all the directories
     # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/'
     # save_plot_dir = f"C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/plot/confusion_matrix_map/{run_name}"
     # pretrained_model = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth'
     # pretrain = torch.load(
         # "C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/model_weights.torch")
+    if num_classes == 4:
+        data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v3/'
+        run_name = "MedicalNet_lr8e-5_batch16_datasetv3_4classes"
+    elif num_classes == 2:
+        data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v4/'
+        run_name = "MedicalNet_lr8e-5_batch16_datasetv4_2classes"
+    else:
+        raise ValueError("num_classes should be 2 or 4")
 
-    data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v3/'
+    # set project name and run name for wandb
+    project_name = "PCI_classification"
+
+    if enable_wandb:
+        # Log in to wandb
+        wandb.login(key='f20a2a6646a45224f8e867aa0c94a51efb8eed99')
+        # Initialize wandb
+        run = wandb.init(project=project_name, name=run_name)
+
     # pretrained_model = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth'
     save_plot_dir = f"/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/confusion_matrix_map/{run_name}"
     pretrain = torch.load(
@@ -174,15 +194,6 @@ def mian(enable_wandb=False):
     # pretrain = torch.load(
     #     "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/model_weights.torch")
 
-    # set hyperparameters
-    batch_size = 16  #64 out of memory
-    epochs = 50
-    val_interval = 1
-    lr = 8e-5 # 3e-5
-    gamma = 0.9
-    seed = 42
-    num_classes = 4
-    seed_everything(seed)
 
     #set model
     model = nets.resnet50(
@@ -213,13 +224,13 @@ def mian(enable_wandb=False):
     criterion = nn.CrossEntropyLoss()
 
     # optimizer
-    optimizer = optim.AdamW(model.parameters(), lr=lr)
+    optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-5)
 
     # scheduler
     scheduler = PolynomialLR(optimizer, total_iters=epochs, power=gamma)
     # metric
     auc_metric = ROCAUCMetric()
-    ResNet_train(epochs, val_interval, model, train_loader, val_loader, criterion,
+    ResNet_train(num_classes, epochs, val_interval, model, train_loader, val_loader, criterion,
                  optimizer, scheduler, post_label, post_pred, auc_metric, device, enable_wandb=enable_wandb, save_dir=save_plot_dir)
 
 
