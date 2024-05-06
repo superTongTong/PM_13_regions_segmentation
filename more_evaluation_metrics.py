@@ -19,6 +19,7 @@ def compute_all_metrics(pred, gt, spacing, bor_gt, bor_pred):
     border_SD3 = compute_surface_dice_at_tolerance(border_surface_distance, 3)
     border_SD4 = compute_surface_dice_at_tolerance(border_surface_distance, 4)
     border_SD5 = compute_surface_dice_at_tolerance(border_surface_distance, 5)
+    border_HD95 = compute_robust_hausdorff(border_surface_distance, 95)
     # border_clDice = clDice(bor_pred, bor_gt)
     surface_distances = compute_surface_distances(gt, pred, spacing)
     # hausdorff_distance = compute_robust_hausdorff(surface_distances, 100)
@@ -36,6 +37,7 @@ def compute_all_metrics(pred, gt, spacing, bor_gt, bor_pred):
     border_SD3 = round(border_SD3, 4)
     border_SD4 = round(border_SD4, 4)
     border_SD5 = round(border_SD5, 4)
+    border_HD95 = round(border_HD95, 4)
     # border_clDice = round(border_clDice, 4)
     # hausdorff_distance = round(hausdorff_distance, 4)
     HD95 = round(HD95, 4)
@@ -45,8 +47,9 @@ def compute_all_metrics(pred, gt, spacing, bor_gt, bor_pred):
     surface_dice_2mm = round(surface_dice_2mm, 4)
     surface_dice_3mm = round(surface_dice_3mm, 4)
 
-    return (DSC, border_DSC, border_SD1, border_SD2, border_SD3, border_SD4, border_SD5, HD95,
-            average_distance_pred_to_gt, average_distance_gt_to_pred, surface_dice_1mm, surface_dice_2mm, surface_dice_3mm)
+    return (DSC, border_DSC, border_SD1, border_SD2, border_SD3, border_SD4, border_SD5, border_HD95, HD95,
+            average_distance_pred_to_gt, average_distance_gt_to_pred, surface_dice_1mm, surface_dice_2mm,
+            surface_dice_3mm)
 
 
 def obtain_border_regions(pred, gt, liver_mask, stomach_mask, spleen_mask, pancreas_mask, itk_img):
@@ -121,15 +124,19 @@ def main(prediction_file_path, ground_truth_file_path, dir_organs, case_number):
         b_pred_bool = p_b_mask.astype(bool)
         b_gt_bool = g_b_mask.astype(bool)
 
-        (DSC, inter_organ, inter_organ_SD1, inter_organ_SD2, inter_organ_SD3, inter_organ_SD4, inter_organ_SD5, HD95,
+        (DSC, inter_organ, inter_organ_SD1, inter_organ_SD2, inter_organ_SD3, inter_organ_SD4, inter_organ_SD5,
+         inter_organ_HD95, HD95,
          MASD_gt_to_pred, MASD_pred_to_gt, surface_dice_1mm,
-         surface_dice_2mm, surface_dice_3mm) = compute_all_metrics(array_pred_bool, array_gt_bool, sitk_spacing, b_gt_bool, b_pred_bool)
+         surface_dice_2mm, surface_dice_3mm) = compute_all_metrics(array_pred_bool, array_gt_bool, sitk_spacing,
+                                                                   b_gt_bool, b_pred_bool)
 
         data.append({"Case ID": case_number, "Region_num": i, "DSC": DSC, "Inter-organ DSC": inter_organ,
-                     "Inter-organ SD1": inter_organ_SD1, "Inter-organ SD2": inter_organ_SD2, "Inter-organ SD3": inter_organ_SD3,
+                     "Inter-organ SD1": inter_organ_SD1, "Inter-organ SD2": inter_organ_SD2,
+                     "Inter-organ SD3": inter_organ_SD3,
                      "Inter-organ SD4": inter_organ_SD4, "Inter-organ SD5": inter_organ_SD5,
                      "surface_dice_1mm": surface_dice_1mm,
                      "surface_dice_2mm": surface_dice_2mm, "surface_dice_3mm": surface_dice_3mm,
+                     "Inter-organ HD95": inter_organ_HD95,
                      "HD95": HD95, "MASD gt to pred": MASD_gt_to_pred, "MASD pred to gt": MASD_pred_to_gt})
 
     avg_DSC = (data[0]["DSC"] + data[1]["DSC"] + data[2]["DSC"]) / 3
@@ -139,6 +146,7 @@ def main(prediction_file_path, ground_truth_file_path, dir_organs, case_number):
     avg_border_SD3 = (data[0]["Inter-organ SD3"] + data[1]["Inter-organ SD3"] + data[2]["Inter-organ SD3"]) / 3
     avg_border_SD4 = (data[0]["Inter-organ SD4"] + data[1]["Inter-organ SD4"] + data[2]["Inter-organ SD4"]) / 3
     avg_border_SD5 = (data[0]["Inter-organ SD5"] + data[1]["Inter-organ SD5"] + data[2]["Inter-organ SD5"]) / 3
+    avg_inter_organ_HD95 = (data[0]["Inter-organ HD95"] + data[1]["Inter-organ HD95"] + data[2]["Inter-organ HD95"]) / 3
     # avg_hausdorff_distance = (data[0]["hausdorff_distance"] + data[1]["hausdorff_distance"] + data[2]["hausdorff_distance"]) / 3
     avg_HD95 = (data[0]["HD95"] + data[1]["HD95"] + data[2]["HD95"]) / 3
     avg_MASD_gt_to_pred = (data[0]["MASD gt to pred"] + data[1]["MASD gt to pred"] + data[2]["MASD gt to pred"]) / 3
@@ -152,7 +160,8 @@ def main(prediction_file_path, ground_truth_file_path, dir_organs, case_number):
                  "Inter-organ SD2": round(avg_border_SD2, 4), "Inter-organ SD3": round(avg_border_SD3, 4),
                  "Inter-organ SD4": round(avg_border_SD4, 4), "Inter-organ SD5": round(avg_border_SD5, 4),
                  "surface_dice_1mm": round(avg_surface_dice_1mm, 4), "surface_dice_2mm": round(avg_surface_dice_2mm, 4),
-                 "surface_dice_3mm": round(avg_surface_dice_3mm, 4), "HD95": round(avg_HD95, 4),
+                 "surface_dice_3mm": round(avg_surface_dice_3mm, 4), "Inter-organ HD95": round(avg_inter_organ_HD95, 4),
+                 "HD95": round(avg_HD95, 4),
                  "MASD gt to pred": round(avg_MASD_gt_to_pred, 4), "MASD pred to gt": round(avg_MASD_pred_to_gt, 4)})
     return data
 
@@ -166,7 +175,6 @@ if __name__ == "__main__":
     # gt_path = "./code_test_folder/3d_slicer_checker/gt/s0158.nii.gz"
     # dir_organs = "./code_test_folder/3d_slicer_checker/organs_masks/s0158"
     # data = main(pred_path, gt_path, dir_organs, case_number="s0158")
-
 
     '''
     following code for test multiple cases in the input folder
@@ -184,15 +192,19 @@ if __name__ == "__main__":
     # # pred_folder = "R_S_Sim_Con"
     # # pred_folder = "R_S_Sim_Con_GBlur"
     # # List of pred_folders
-    pred_folders = ["contrastAgument", "gaussianBlur", "gaussianNoise", "no_DA_200epoch", "R_S_Sim",
-                    "rotation", "scale", "SimLowRes", "R_S_Sim_Con", "R_S_Sim_Con_GBlur"]
+    # pred_folders = ["contrastAgument", "gaussianBlur", "gaussianNoise", "no_DA_200epoch", "R_S_Sim",
+    #                 "rotation", "scale", "SimLowRes", "R_S_Sim_Con", "R_S_Sim_Con_GBlur"]
+    # pred_folders = ["BL_scratch_noDA", "BL_scratch_DA", "BL_finetune_DA",
+    #                 "R_scratch_noDA", "R_scratch_DA", "R_finetune_DA"]
+    pred_folders = ["BL_scratch_DA_V2"]
     df_summary = pd.DataFrame()
     for pred_folder in pred_folders:
         print(f"Start evaluating {pred_folder} prediction results")
-        pred_path = os.path.join(input_folder, f"200epochs/{pred_folder}")
-        gt_path = os.path.join(input_folder, "gt")
-        organs_masks_path = os.path.join(input_folder, "organs_masks")
+        pred_path = os.path.join(input_folder, f"500epochs/{pred_folder}")
+        gt_path = os.path.join(input_folder, "gt_orig")
+        organs_masks_path = os.path.join(input_folder, "organs_masks_orig")
         count = 0
+
         df = pd.DataFrame()
 
         for file in os.listdir(pred_path):
@@ -219,6 +231,7 @@ if __name__ == "__main__":
         avg_overall_border_SD3 = df["Inter-organ SD3"].mean()
         avg_overall_border_SD4 = df["Inter-organ SD4"].mean()
         avg_overall_border_SD5 = df["Inter-organ SD5"].mean()
+        avg_overall_border_HD95 = df["Inter-organ HD95"].mean()
         avg_overall_HD95 = df["HD95"].mean()
         avg_overall_MASD_gt_to_pred = df["MASD gt to pred"].mean()
         avg_overall_MASD_pred_to_gt = df["MASD pred to gt"].mean()
@@ -226,15 +239,22 @@ if __name__ == "__main__":
         avg_overall_surface_dice_2mm = df["surface_dice_2mm"].mean()
         avg_overall_surface_dice_3mm = df["surface_dice_3mm"].mean()
         df = df._append({"Case ID": f"{pred_folder}", "Region_num": f"{pred_folder}", "DSC": round(avg_overall_DSC, 4),
-                        "Inter-organ DSC": round(avg_overall_border_DSC, 4), "Inter-organ SD1": round(avg_overall_border_SD1, 4),
-                        "Inter-organ SD2": round(avg_overall_border_SD2, 4), "Inter-organ SD3": round(avg_overall_border_SD3, 4),
-                        "Inter-organ SD4": round(avg_overall_border_SD4, 4), "Inter-organ SD5": round(avg_overall_border_SD5, 4),
-                        "HD95": round(avg_overall_HD95, 4), "MASD gt to pred": round(avg_overall_MASD_gt_to_pred, 4),
-                        "MASD pred to gt": round(avg_overall_MASD_pred_to_gt, 4), "surface_dice_1mm": round(avg_overall_surface_dice_1mm, 4),
-                        "surface_dice_2mm": round(avg_overall_surface_dice_2mm, 4), "surface_dice_3mm": round(avg_overall_surface_dice_3mm, 4)},
+                         "Inter-organ DSC": round(avg_overall_border_DSC, 4),
+                         "Inter-organ SD1": round(avg_overall_border_SD1, 4),
+                         "Inter-organ SD2": round(avg_overall_border_SD2, 4),
+                         "Inter-organ SD3": round(avg_overall_border_SD3, 4),
+                         "Inter-organ SD4": round(avg_overall_border_SD4, 4),
+                         "Inter-organ SD5": round(avg_overall_border_SD5, 4),
+                         "Inter-organ HD95": round(avg_overall_border_HD95, 4),
+                         "HD95": round(avg_overall_HD95, 4), "MASD gt to pred": round(avg_overall_MASD_gt_to_pred, 4),
+                         "MASD pred to gt": round(avg_overall_MASD_pred_to_gt, 4),
+                         "surface_dice_1mm": round(avg_overall_surface_dice_1mm, 4),
+                         "surface_dice_2mm": round(avg_overall_surface_dice_2mm, 4),
+                         "surface_dice_3mm": round(avg_overall_surface_dice_3mm, 4)},
                         ignore_index=True)
         # Save the DataFrame to a csv file
         df.to_csv(f"{input_folder}evaluation_metrics_{pred_folder}.csv", index=False)
+
         print("--- Total time %s seconds ---" % round(time.time() - start_time, 2))
-        df_summary = df_summary.append(df.iloc[-1])
+        df_summary = df_summary._append(df.iloc[-1])
     df_summary.to_csv(f"{input_folder}evaluation_metrics_summary.csv", index=False)
