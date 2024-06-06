@@ -7,4 +7,4 @@ This repository contains the code for the graduation project at Technical Univer
 Project title: AI for Assessing Peritoneal Metastases on CT Imaging
 
 
-My graduation thesis 'Final_graduation_report.pdf'  explained the project in detail.
+My graduation thesis `Final_graduation_report.pdf` explained the project in detail.
