@@ -52,7 +52,9 @@ def remove_outside_of_mask(seg_path, mask_path, addon=1):
 
 
 def main():
-    mask_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/PCI_masks_231cases/'
+    mask_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/code_test_folder/for_evaluation/500epochs/BL_scratch_DA/'
+    save_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/code_test_folder/for_evaluation/500epochs/BL_scratch_DA_V2/'
+    os.makedirs(os.path.dirname(save_dir), exist_ok=True)
     class_map = {
         1: "Segment_1",
         2: "Segment_2",
@@ -64,7 +66,7 @@ def main():
             nib_img = nib.load(mask_dir + file)
             mask = nib_img.get_fdata()
             keep_largest_blob_mask = keep_largest_blob_multilabel(mask, class_map, rois)
-            save_path = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/masks_v2/' + file
+            save_path = save_dir + file
             print(f'saving to {save_path}...')
             nib.save(nib.Nifti1Image(keep_largest_blob_mask, nib_img.affine), save_path)
 

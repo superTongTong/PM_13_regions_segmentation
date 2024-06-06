@@ -196,7 +196,7 @@ if __name__ == "__main__":
     #                 "rotation", "scale", "SimLowRes", "R_S_Sim_Con", "R_S_Sim_Con_GBlur"]
     # pred_folders = ["BL_scratch_noDA", "BL_scratch_DA", "BL_finetune_DA",
     #                 "R_scratch_noDA", "R_scratch_DA", "R_finetune_DA"]
-    pred_folders = ["BL_scratch_DA_V2"]
+    pred_folders = ["BL_scratch_DA5", "BL_scratch_trainner"]
     df_summary = pd.DataFrame()
     for pred_folder in pred_folders:
         print(f"Start evaluating {pred_folder} prediction results")

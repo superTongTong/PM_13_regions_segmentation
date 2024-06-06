@@ -151,13 +151,13 @@ def check_plot(background, diff_seg):
 
 def create_gif_prediction(sample_id, background, color_segmentation, color_segmentation_pred, r1_diff, r2_diff, r3_diff, num_layer):
 
-    case_path = f'./code_test_folder/saved_gifs/region_based_diff_v2/case_{sample_id}'
+    case_path = f'./code_test_folder/saved_gifs/region_based_diff_test/case_{sample_id}'
     if not os.path.exists(case_path):
         os.makedirs(case_path)
 
-    # images = []  # to store images for the GIF
+    images = []  # to store images for the GIF
     # store all the images as png
-    for layer in range(30, num_layer-35):
+    for layer in range(172, num_layer-35):
     # for layer in range(30, num_layer - 50):
         image = create_seg_figure(background[:, layer, :], color_segmentation[:, layer, :, :],
                                   color_segmentation_pred[:, layer, :, :], r1_diff[:, layer, :, :],
@@ -168,12 +168,12 @@ def create_gif_prediction(sample_id, background, color_segmentation, color_segme
         plt.savefig(image_path)
 
         # append image path to the list
-        # images.append(imageio.imread(image_path))
+        images.append(imageio.imread(image_path))
 
         # close the figure to release resources
         image.close()
-
-    # create GIF
+        break
+    # # create GIF
     # gif_path = f'{case_path}/case_{sample_id}_animation.gif'
     # imageio.mimsave(gif_path, images)
 
@@ -200,9 +200,10 @@ def load_data(data_path):
 
     # load data
     img = nib.load(data_path)
-    RAS_img = check_orientation(img, img.get_fdata())
+    img = img.get_fdata()
+    # RAS_img = check_orientation(img, img.get_fdata())
 
-    return RAS_img
+    return img
 
 
 def find_non_overlap(segmentation_pred, segmentation_gt):
@@ -298,14 +299,14 @@ def run_process(image_path, seg_path, target_path, sample_id):
 
 
 if __name__ == '__main__':
-    folder_in = './code_test_folder/3d_slicer_checker/images'
+    folder_in = './code_test_folder/for_evaluation/500epochs/for_report/'
     for file in os.listdir(folder_in):
 
         if file.endswith(".nii.gz"):
-            sample_id = file.split('_')[0]
-            image_path = f'./code_test_folder/3d_slicer_checker/images/{sample_id}_0000.nii.gz'
-            seg_path = f'./code_test_folder/3d_slicer_checker/pred/{sample_id}.nii.gz'
-            target_path = f'./code_test_folder/3d_slicer_checker/gt/{sample_id}.nii.gz'
+            sample_id = file.split('.')[0]
+            image_path = f'./code_test_folder/for_evaluation/image_orig/{sample_id}_0000.nii.gz'
+            seg_path = f'{folder_in}{sample_id}.nii.gz'
+            target_path = f'./code_test_folder/for_evaluation/gt_orig/{sample_id}.nii.gz'
             run_process(image_path, seg_path, target_path, sample_id)
 
     # '''

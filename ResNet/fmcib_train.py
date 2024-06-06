@@ -14,7 +14,7 @@ from monai.metrics import ROCAUCMetric
 import time
 from monai.data import decollate_batch
 import wandb
-from sklearn.metrics import confusion_matrix, precision_recall_fscore_support, classification_report
+from sklearn.metrics import confusion_matrix, precision_recall_fscore_support, classification_report, multilabel_confusion_matrix
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -36,9 +36,10 @@ def ResNet_train(num_cls, epochs, val_interval, model, train_loader, val_loader,
 
     if num_cls == 4:
         eva_labels = [0, 1, 2, 3]
+        cm_f = multilabel_confusion_matrix()
     else:
         eva_labels = [0, 1]
-
+        cm_f = confusion_matrix()
     best_metric = -1
     best_metric_epoch = -1
     train_loss_list = []
@@ -122,7 +123,7 @@ def ResNet_train(num_cls, epochs, val_interval, model, train_loader, val_loader,
         os.makedirs(save_dir, exist_ok=True)
         if epoch == 0 and save_dir is not None:
             # Compute confusion matrix
-            cm = confusion_matrix(y.cpu().numpy(), y_pred.argmax(dim=1).cpu().numpy())
+            cm = cm_f(y.cpu().numpy(), y_pred.argmax(dim=1).cpu().numpy())
             # Plot confusion matrix
             plt.figure(figsize=(10, 10))
             sns.heatmap(cm, annot=True, fmt="d")
@@ -137,7 +138,7 @@ def ResNet_train(num_cls, epochs, val_interval, model, train_loader, val_loader,
 
         if (epoch + 1) % 10 == 0 and save_dir is not None:
             # Compute confusion matrix
-            cm = confusion_matrix(y.cpu().numpy(), y_pred.argmax(dim=1).cpu().numpy())
+            cm = cm_f(y.cpu().numpy(), y_pred.argmax(dim=1).cpu().numpy())
             # Plot confusion matrix# Plot confusion matrix
             plt.figure(figsize=(10, 10))
             sns.heatmap(cm, annot=True, fmt="d")
