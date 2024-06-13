@@ -1,6 +1,6 @@
 import slicerio
 import nrrd
-from Data_conversion.nrrd_to_nifiti_conversion import nifti_write
+from nrrd_to_nifiti_conversion import nifti_write
 import time
 import nibabel as nib
 from .nn_algorithm import *

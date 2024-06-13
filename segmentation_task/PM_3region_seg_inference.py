@@ -25,15 +25,14 @@ def get_3_region_masks():
     nnUNet_raw = os.environ.get('nnUNet_raw')
     # nnUNet_preprocessed = os.environ.get('nnUNet_preprocessed')
     nnUNet_results = os.environ.get('nnUNet_results')
+
+    '''The path to the pretrained model, please verify the path before running the code'''
+
     pretrained_path = Path('Dataset008_CKI_orig/finetune_500epochs2024_1_30_10_33')
     i_path = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/test_data/'
     o_path = Path('/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/masks_v2')
-    # pretrained_path = Path('Dataset008_CKI_orig/finetune_500epochs2024_1_30_10_33')
-    # i_path = './data/data_ViT/images/val/'
-    # o_path = './data/data_ViT/masks_v2'
     pretrained_model_path = os.path.join(nnUNet_results, pretrained_path)
-    # input_path = os.path.join(nnUNet_raw, i_path)
-    # output_path = os.path.join(nnUNet_raw, o_path)
+
     # instantiate the nnUNetPredictor
     predictor = nnUNetPredictor(
         tile_step_size=0.5,
@@ -54,11 +53,11 @@ def get_3_region_masks():
                                  save_probabilities=False, overwrite=False,
                                  num_processes_preprocessing=3, num_processes_segmentation_export=3,
                                  folder_with_segs_from_prev_stage=None, num_parts=1, part_id=0)
-    # apply post-processing.
+
 
 def mian():
-
     get_3_region_masks()
+
 
 if __name__ == "__main__":
     mian()

@@ -165,16 +165,12 @@ def mian(enable_wandb=False):
     seed_everything(seed)
 
     # specify all the directories
-    # data_dir = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/cropped_scan_test/'
-    # save_plot_dir = f"C:/Users/20202119/PycharmProjects/segmentation_PM/data/data_ViT/plot/confusion_matrix_map/{run_name}"
-    # pretrained_model = 'C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth'
-    # pretrain = torch.load(
-        # "C:/Users/20202119/PycharmProjects/segmentation_PM/data/MedicalNet_pretrained_weights/model_weights.torch")
+    '''Please change the data_dir and run_name according to your own data and model name'''
     if num_classes == 4:
-        data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v3/'
+        data_dir = '../data/pci_score_data/cropped_scan_v3/'
         run_name = "MedicalNet_lr8e-5_batch16_datasetv3_4classes"
     elif num_classes == 2:
-        data_dir = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/cropped_scan_v4/'
+        data_dir = '../data/pci_score_data/cropped_scan_v4/'
         run_name = "MedicalNet_lr8e-5_batch16_datasetv4_2classes"
     else:
         raise ValueError("num_classes should be 2 or 4")
@@ -184,14 +180,18 @@ def mian(enable_wandb=False):
 
     if enable_wandb:
         # Log in to wandb
-        wandb.login(key='f20a2a6646a45224f8e867aa0c94a51efb8eed99')
+        '''Please fill in your own wandb login key'''
+        wandb.login(key='')
         # Initialize wandb
         run = wandb.init(project=project_name, name=run_name)
 
-    # pretrained_model = '/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth'
-    save_plot_dir = f"/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/confusion_matrix_map/{run_name}"
+    '''Please change the save_plot_dir and the pre-trained dir according to your own data and model name'''
+    save_plot_dir = f"../gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/pci_score_data/confusion_matrix_map/{run_name}"
+    # dir of the pretrain Med3D model
     pretrain = torch.load(
-        "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
+        "../data/MedicalNet_pretrained_weights/resnet_50_23dataset.pth")
+
+    # dir of the pretrain fmcib model
     # pretrain = torch.load(
     #     "/gpfs/work5/0/tesr0674/PM_13_regions_segmentation/data/MedicalNet_pretrained_weights/model_weights.torch")
 
@@ -205,11 +205,11 @@ def mian(enable_wandb=False):
         num_classes=num_classes
     )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # load pretrain model
-    # pretrain['state_dict'] = {k.replace("module.", ""): v for k, v in pretrain['state_dict'].items()}
+
     model.to(device)
+
+    # load pretrain weight
     model.load_state_dict(pretrain, strict=False)
-    print("load pretrain weight from fmcib")
 
     # prepare dataloader
     train_loader = PCI_DataLoader(data_dir, batch_size=batch_size, shuffle=False,
@@ -237,7 +237,7 @@ def mian(enable_wandb=False):
 
 if __name__ == '__main__':
     start = time.time()
-    enable_wandb = True
+    enable_wandb = False
     mian(enable_wandb=enable_wandb)
     # Finish the wandb run
     if enable_wandb:
